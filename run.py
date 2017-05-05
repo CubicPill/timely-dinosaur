@@ -110,30 +110,31 @@ def do_interactive_enroll():
 
 
 def fetch_course_data():
-   if 'course_data.json' in os.listdir('./'):
-      with open('course_data.json') as f:
-         r = json.load(f)
-         logging.debug('Existing course data loaded')
-         return r
-   logging.debug('No existing data found, fetch from the server')
+   params = {
+      'kcxx': '',
+      'skls': '',
+      'skxq': '',
+      'skjs': '',
+      'sfym': False,
+      'sfct': False,
+      'sEcho': 1,
+      'iDisplayStart': 0,
+      'iDisplayLength': 750
+   }
 
-   url_sem_plan = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkBxqjhxk?kcxx=&skls=&skxq=&skjc=&sfym=false&sfct=false'
-   data_sem_plan = 'sEcho=1&iColumns=10&sColumns=&iDisplayStart=0&iDisplayLength=750&mDataProp_0=kch&mDataProp_1=kcmc&mDataProp_2=xf&mDataProp_3=skls&mDataProp_4=sksj&mDataProp_5=skdd&mDataProp_6=xkrs&mDataProp_7=syrs&mDataProp_8=ctsm&mDataProp_9=czOper'
+   url_sem_plan = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkBxqjhxk'
    # 本学期计划选课
 
-   url_cross_grade = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkKnjxk?kcxx=&skls=&skxq=&skjc=&sfym=false&sfct=false'
-   data_cross_grade = 'sEcho=1&iColumns=10&sColumns=&iDisplayStart=0&iDisplayLength=750&mDataProp_0=kch&mDataProp_1=kcmc&mDataProp_2=xf&mDataProp_3=skls&mDataProp_4=sksj&mDataProp_5=skdd&mDataProp_6=xkrs&mDataProp_7=syrs&mDataProp_8=ctsm&mDataProp_9=czOper'
+   url_cross_grade = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkKnjxk'
    # 专业内跨年级选课
 
-   url_cross_dept = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkFawxk?kcxx=&skls=&skxq=&skjc=&sfym=false&sfct=false'
-   data_cross_dept = 'sEcho=1&iColumns=10&sColumns=&iDisplayStart=0&iDisplayLength=750&mDataProp_0=kch&mDataProp_1=kcmc&mDataProp_2=xf&mDataProp_3=skls&mDataProp_4=sksj&mDataProp_5=skdd&mDataProp_6=xkrs&mDataProp_7=syrs&mDataProp_8=ctsm&mDataProp_9=czOper'
+   url_cross_dept = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkFawxk'
    # 跨专业选课
 
-   url_common = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkGgxxkxk?kcxx=&skls=&skxq=&skjc=&sfym=false&sfct=false&szjylb='
-   data_common = 'sEcho=1&iColumns=11&sColumns=&iDisplayStart=0&iDisplayLength=750&mDataProp_0=kch&mDataProp_1=kcmc&mDataProp_2=xf&mDataProp_3=skls&mDataProp_4=sksj&mDataProp_5=skdd&mDataProp_6=xkrs&mDataProp_7=syrs&mDataProp_8=ctsm&mDataProp_9=szkcflmc&mDataProp_10=czOper'
+   url_common = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkGgxxkxk'
    # 公选课选课
 
-   sem_plan = session.post(url_sem_plan + '&' + data_sem_plan)
+   sem_plan = session.post(url_sem_plan, data=params)
    if sem_plan.status_code == 404:
       print('登录状态错误!')
       logging.critical('Error occurred while querying course data')
@@ -142,15 +143,15 @@ def fetch_course_data():
    logging.debug('Semester planning courses fetching done, total: {}, fetched: {}'
                  .format(sem_plan['iTotalRecords'], len(sem_plan['aaData'])))
 
-   cross_grade = session.post(url_cross_grade + '&' + data_cross_grade).json()
+   cross_grade = session.post(url_cross_grade, data=params).json()
    logging.debug('Cross grade courses fetching done, total: {}, fetched: {}'
                  .format(cross_grade['iTotalRecords'], len(cross_grade['aaData'])))
 
-   cross_dept = session.post(url_cross_dept + '&' + data_cross_dept).json()
+   cross_dept = session.post(url_cross_dept, data=params).json()
    logging.debug('Cross department courses fetching done, total: {}, fetched: {}'
                  .format(cross_dept['iTotalRecords'], len(cross_dept['aaData'])))
 
-   common = session.post(url_common + '&' + data_common).json()
+   common = session.post(url_common, data=params).json()
    logging.debug('Common courses fetching done, total: {}, fetched: {}'
                  .format(common['iTotalRecords'], len(common['aaData'])))
 
@@ -191,11 +192,23 @@ def print_result_list(success, failed):
    print('\n成功 %d, 失败 %d' % (len(success), len(failed)))
 
 
+def load_course_data():
+   with open('course_data.json') as f:
+      r = json.load(f)
+      logging.debug('Existing course data loaded')
+      return r
+
+
 def main():
    config = load_config()
    m = int(input('选择模式: 1 批量选课 2 单项选课\n>'))
 
    mode = ['batch', 'interactive'][m - 1]
+   load_course_data_from_file = True
+   if 'course_data.json' in os.listdir('./'):
+      if input('是否重新加载课程数据?(Y/N)\n>').lower() == 'y':
+         load_course_data_from_file = False
+         logging.info('Overwrite existing course data')
 
    print('登录教务系统......')
    start_time = time.time() * 1e3
@@ -211,13 +224,17 @@ def main():
 
    # TODO:如选课系统未开放, 轮询等待
 
-   print('获取全部课程列表......')
-   start_time = time.time() * 1e3
-   data = fetch_course_data()
-   create_id_name_map(data)
-   print('课程列表获取完成!')
-   logging.info('Course list fetching done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
+   if load_course_data_from_file:
+      data = load_course_data()
+   else:
+      logging.debug('No existing data found or overwrite existing data, fetch from the server')
+      print('获取全部课程列表......')
+      start_time = time.time() * 1e3
+      data = fetch_course_data()
+      print('课程列表获取完成!')
+      logging.info('Course list fetching done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
 
+   create_id_name_map(data)
    if mode == 'batch':
       print('选课课程:\n' + '\n'.join([item + ' ' + course_name_map[item] for item in config['course_id']]))
       input('按 Enter 键继续')
@@ -240,6 +257,7 @@ def main():
       retry = input('是否尝试重选失败课程? (Y/N)\n>')
       if not retry.lower() == 'y':
          break
+      logging.info('Retry enrolling')
       failed_ids = [item['course_id'] for item in failed]
       success, failed = do_batch_enroll(failed_ids)
       print_result_list(success, failed)
