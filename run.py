@@ -3,31 +3,28 @@ import logging
 import os
 import re
 import sys
+import time
 
 import requests
 from bs4 import BeautifulSoup
 
 try:
    os.chdir(os.path.dirname(sys.argv[0]))  # change work directory
-except:
+except OSError:
    pass
 
-h = {
-   'Cache-Control': 'max-age=0',
-   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36',
-   'Accept-Encoding': 'gzip, deflate',
-   'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4'
-}
+session = requests.session()
+course_name_map = dict()
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filename='logging.log')
 logging.getLogger('requests').setLevel(logging.ERROR)
+
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/'
 ENROLL_URL = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/fawxkOper?jx0404id={id}&xkzy=&trjf='
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
 
 
-def do_login(session, username, password):
-   logging.info('登录教务系统......')
+def do_login(username, password):
    soup = BeautifulSoup(session.get(MAIN_URL).content, 'html5lib')
    form = soup.find('form', id='fm1')
    post_url = LOGIN_SERVER_ADDR + form['action']
@@ -37,15 +34,15 @@ def do_login(session, username, password):
          login_data[element['name']] = element['value']
    login_data['username'] = username
    login_data['password'] = password
-   response = session.post(post_url, data=login_data, timeout=20, headers=h)
+   response = session.post(post_url, data=login_data, timeout=20)
    soup_resp = BeautifulSoup(response.content, 'html5lib')
    error = soup_resp.find('div', {'class': 'errors', 'id': 'msg'})
 
    if error:
-      logging.error('登录失败! 错误信息: ' + error.text.replace('.', '. '))
+      print('登录失败! 错误信息: ' + error.text.replace('.', '. '))
       return False
    else:
-      logging.info('登录成功!')
+      print('登录成功!')
       return True
 
 
@@ -56,31 +53,70 @@ def load_config():
    return config
 
 
-def do_enroll(session, course_ids, course_name_map):
+def post_enroll_data(course_id):
+   logging.debug('Enrolling course id {}'.format(course_id))
+   start_time = time.time() * 1e3
+   try:
+      result = session.get(ENROLL_URL.format(id=course_id), timeout=5).json()
+      logging.debug('Course id {} enrolling done, success: {}, Time {}ms'
+                    .format(course_id, result['success'], round(time.time() * 1e3 - start_time), 2))
+   except requests.Timeout:
+      logging.error('Connection timed out!')
+      result = {'success': False, 'message': '错误: 网络连接超时'}
+   return result
+
+
+def do_batch_enroll(course_ids):
    success = list()
    failed = list()
    for course_id in course_ids:
-      logging.debug('Enrolling course id {}'.format(course_id))
-      result = session.get(ENROLL_URL.format(id=course_id)).json()
+      result = post_enroll_data(course_id)
       course_name = course_name_map.get(course_id)
 
       if result['success']:
          success.append({'course_id': course_id, 'name': course_name})
-         logging.info('课程 {name} ({id}) 选课成功!'.format(name=course_name, id=course_id))
+         print('SUCCESS!!! 课程 {name} ({id}) 选课成功!'.format(name=course_name, id=course_id))
       else:
          failed.append({'course_id': course_id, 'name': course_name, 'message': result['message']})
-         logging.warning('课程 {name} ({id}) {message}'.format(name=course_name, id=course_id, message=result['message']))
+         print('FAILED!!! 课程 {name} ({id}) {message}'.format(name=course_name, id=course_id, message=result['message']))
 
-      logging.debug('Course id {} enrolling done, success: {}'.format(course_id, result['success']))
    return success, failed
 
 
-def fetch_course_data(session):
+def do_interactive_enroll():
+   success = list()
+   failed = list()
+   while True:
+
+      course_id = input('输入课程ID. 输入 "exit" 退出.\nID:')
+      if course_id == 'exit':
+         break
+      elif not re.match('\d{15}$', course_id):
+         cont = input('ID {} 格式不匹配. 是否继续?(Y/N)\n>'.format(course_id))
+         if cont.lower() == 'y':
+            pass
+         else:
+            continue
+      result = post_enroll_data(course_id)
+      course_name = course_name_map.get(course_id)
+      if result['success']:
+         success.append({'course_id': course_id, 'name': course_name})
+         print('SUCCESS!!! 课程 {name} ({id}) 选课成功!'.format(name=course_name, id=course_id))
+      else:
+         failed.append({'course_id': course_id, 'name': course_name, 'message': result['message']})
+         print('FAILED!!! 课程 {name} ({id}) {message}'.format(name=course_name, id=course_id, message=result['message']))
+
+   return success, failed
+
+
+def fetch_course_data():
    if 'course_data.json' in os.listdir('./'):
-      logging.debug('Existing course data found, loading...')
       with open('course_data.json') as f:
-         return json.load(f)
-   logging.debug('No existing data found, fetching from server...')
+         r = json.load(f)
+         logging.debug('Existing course data loaded')
+         return r
+   logging.debug('No existing data found, fetch from the server')
+
    url_sem_plan = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkBxqjhxk?kcxx=&skls=&skxq=&skjc=&sfym=false&sfct=false'
    data_sem_plan = 'sEcho=1&iColumns=10&sColumns=&iDisplayStart=0&iDisplayLength=750&mDataProp_0=kch&mDataProp_1=kcmc&mDataProp_2=xf&mDataProp_3=skls&mDataProp_4=sksj&mDataProp_5=skdd&mDataProp_6=xkrs&mDataProp_7=syrs&mDataProp_8=ctsm&mDataProp_9=czOper'
    # 本学期计划选课
@@ -99,7 +135,8 @@ def fetch_course_data(session):
 
    sem_plan = session.post(url_sem_plan + '&' + data_sem_plan)
    if sem_plan.status_code == 404:
-      logging.error('登录状态错误!')
+      print('登录状态错误!')
+      logging.critical('Error occurred while querying course data')
       exit(1)
    sem_plan = sem_plan.json()
    logging.debug('Semester planning courses fetching done, total: {}, fetched: {}'
@@ -128,51 +165,88 @@ def fetch_course_data(session):
 
 
 def create_id_name_map(data):
-   _map = dict()
+   global course_name_map
+
    for course in data:
-      _map[course['jx0404id']] = course['kcmc']
+      course_name_map[course['jx0404id']] = course['kcmc']
    logging.debug('ID to name mapping established')
-   return _map
+
+
+def print_result_list(success, failed):
+   print('--------成功列表--------')
+   if success:
+      for s in success:
+         print('{name} ({id}) 选课成功!'.format(name=s['name'], id=s['course_id']))
+   else:
+      print('无')
+   print('------------------------')
+
+   print('--------失败列表--------')
+   if failed:
+      for f in failed:
+         print('{name} ({id}) {msg}'.format(name=f['name'], id=f['course_id'], msg=f['message']))
+   else:
+      print('无')
+   print('------------------------')
+   print('\n成功 %d, 失败 %d' % (len(success), len(failed)))
 
 
 def main():
-   session = requests.session()
    config = load_config()
-   logging.info('课程id: ' + ', '.join(config['course_id']))
-   if not do_login(session, config['username'], config['password']):
+   m = int(input('选择模式: 1 批量选课 2 单项选课\n>'))
+
+   mode = ['batch', 'interactive'][m - 1]
+
+   print('登录教务系统......')
+   start_time = time.time() * 1e3
+   if not do_login(config['username'], config['password']):
+      logging.critical('CAS login failed')
       exit(1)
 
    temp = session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xklc_list?Ves632DSdyV=NEW_XSD_PYGL')
    zbid = re.search('/jsxsd/xsxk/xklc_view\?jx0502zbid=([0-9A-Z]*)', temp.text).group(1)
    session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xsxk_index?jx0502zbid=' + zbid)  # complete login
 
-   logging.info('获取全部课程列表......')
-   data = fetch_course_data(session)
-   course_name_map = create_id_name_map(data)
-   logging.info('获取完成!')
+   logging.info('Login completed. Time: {}ms'.format(round(time.time() * 1e3 - start_time), 2))
 
-   logging.info('开始自动选课......')
-   success, failed = do_enroll(session, config['course_id'], course_name_map)
-   logging.info('选课完成!')
+   # TODO:如选课系统未开放, 轮询等待
 
-   logging.info('--------成功列表--------')
-   if success:
-      for s in success:
-         logging.info('{name} ({id}) 选课成功!'.format(name=s['name'], id=s['course_id']))
+   print('获取全部课程列表......')
+   start_time = time.time() * 1e3
+   data = fetch_course_data()
+   create_id_name_map(data)
+   print('课程列表获取完成!')
+   logging.info('Course list fetching done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
+
+   if mode == 'batch':
+      print('选课课程:\n' + '\n'.join([item + ' ' + course_name_map[item] for item in config['course_id']]))
+      input('按 Enter 键继续')
+      print('开始批量自动选课......')
+      start_time = time.time() * 1e3
+      success, failed = do_batch_enroll(config['course_id'])
+      logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
+   elif mode == 'interactive':
+      success, failed = do_interactive_enroll()
    else:
-      logging.info('无')
+      sys.exit(1)
 
-   logging.info('')
+   print('自动选课完成!')
 
-   logging.info('--------失败列表--------')
-   if failed:
-      for f in failed:
-         logging.info('{name} ({id}) {msg}'.format(name=f['name'], id=f['course_id'], msg=f['message']))
-   else:
-      logging.info('无')
+   print_result_list(success, failed)
 
-   logging.info('自动选课完成. 成功 %d, 失败 %d' % (len(success), len(failed)))
+   logging.info('Done, %d success, %d failed' % (len(success), len(failed)))
+
+   while True:
+      retry = input('是否尝试重选失败课程? (Y/N)\n>')
+      if not retry.lower() == 'y':
+         break
+      failed_ids = [item['course_id'] for item in failed]
+      success, failed = do_batch_enroll(failed_ids)
+      print_result_list(success, failed)
 
 
 if __name__ == '__main__':
+   logging.info('********start********')
    main()
+   input('按 Enter 键退出')
+   logging.info('********exit********')
