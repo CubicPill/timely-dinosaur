@@ -4,6 +4,8 @@ import os
 import re
 import sys
 import time
+from queue import Queue
+from threading import Thread
 
 import requests
 from bs4 import BeautifulSoup
@@ -18,10 +20,11 @@ course_name_map = dict()
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filename='logging.log')
 logging.getLogger('requests').setLevel(logging.ERROR)
-
+q = Queue()
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/'
 ENROLL_URL = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/fawxkOper?jx0404id={id}&xkzy=&trjf='
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
+VERSION = 'v1.0.0'
 
 
 def do_login(username, password):
@@ -47,13 +50,26 @@ def do_login(username, password):
 
 
 def load_config():
+   if 'config.json' not in os.listdir('./'):
+      print('未找到配置文件!')
+      input('按 Enter 键退出')
+      sys.exit(1)
    with open('config.json') as f:
       config = json.load(f)
    logging.debug('Config loaded!')
    return config
 
 
-def post_enroll_data(course_id):
+class EnrollThread(Thread):
+   def __init__(self, course_id):
+      Thread.__init__(self)
+      self.id = course_id
+
+   def run(self):
+      _enroll(self.id, True)
+
+
+def _enroll(course_id, thread=False):
    logging.debug('Enrolling course id {}'.format(course_id))
    start_time = time.time() * 1e3
    try:
@@ -63,22 +79,36 @@ def post_enroll_data(course_id):
    except requests.Timeout:
       logging.error('Connection timed out!')
       result = {'success': False, 'message': '错误: 网络连接超时'}
+   result['course_id'] = course_id
+   course_name = course_name_map.get(course_id)
+   result['name'] = course_name
+   if result['success']:
+      print('SUCCESS!!! 课程 {name} ({id}) 选课成功!'.format(name=course_name, id=course_id))
+   else:
+      print('FAILED!!! 课程 {name} ({id}) {message}'.format(name=course_name, id=course_id, message=result['message']))
+   if thread:
+      q.put(result)
    return result
 
 
 def do_batch_enroll(course_ids):
    success = list()
    failed = list()
+   threads = []
    for course_id in course_ids:
-      result = post_enroll_data(course_id)
-      course_name = course_name_map.get(course_id)
+      thread = EnrollThread(course_id)
+      thread.start()
+      threads.append(thread)
+   for thread in threads:
+      thread.join()
+
+   while not q.empty():
+      result = q.get_nowait()
 
       if result['success']:
-         success.append({'course_id': course_id, 'name': course_name})
-         print('SUCCESS!!! 课程 {name} ({id}) 选课成功!'.format(name=course_name, id=course_id))
+         success.append(result)
       else:
-         failed.append({'course_id': course_id, 'name': course_name, 'message': result['message']})
-         print('FAILED!!! 课程 {name} ({id}) {message}'.format(name=course_name, id=course_id, message=result['message']))
+         failed.append(result)
 
    return success, failed
 
@@ -88,7 +118,7 @@ def do_interactive_enroll():
    failed = list()
    while True:
 
-      course_id = input('输入课程ID. 输入 "exit" 退出.\nID:')
+      course_id = input('输入课程ID. 输入 "exit" 结束.\nID:')
       if course_id == 'exit':
          break
       elif not re.match('\d{15}$', course_id):
@@ -97,14 +127,11 @@ def do_interactive_enroll():
             pass
          else:
             continue
-      result = post_enroll_data(course_id)
-      course_name = course_name_map.get(course_id)
+      result = _enroll(course_id)
       if result['success']:
-         success.append({'course_id': course_id, 'name': course_name})
-         print('SUCCESS!!! 课程 {name} ({id}) 选课成功!'.format(name=course_name, id=course_id))
+         success.append(result)
       else:
-         failed.append({'course_id': course_id, 'name': course_name, 'message': result['message']})
-         print('FAILED!!! 课程 {name} ({id}) {message}'.format(name=course_name, id=course_id, message=result['message']))
+         failed.append(result)
 
    return success, failed
 
@@ -138,7 +165,7 @@ def fetch_course_data():
    if sem_plan.status_code == 404:
       print('登录状态错误!')
       logging.critical('Error occurred while querying course data')
-      exit(1)
+      sys.exit(1)
    sem_plan = sem_plan.json()
    logging.debug('Semester planning courses fetching done, total: {}, fetched: {}'
                  .format(sem_plan['iTotalRecords'], len(sem_plan['aaData'])))
@@ -180,7 +207,7 @@ def print_result_list(success, failed):
          print('{name} ({id}) 选课成功!'.format(name=s['name'], id=s['course_id']))
    else:
       print('无')
-   print('------------------------')
+   print('------------------------\n')
 
    print('--------失败列表--------')
    if failed:
@@ -200,6 +227,7 @@ def load_course_data():
 
 
 def main():
+   print('Timely Dinosaur ' + VERSION + ' Author: CubicPill')
    config = load_config()
    m = int(input('选择模式: 1 批量选课 2 单项选课\n>'))
 
@@ -214,7 +242,7 @@ def main():
    start_time = time.time() * 1e3
    if not do_login(config['username'], config['password']):
       logging.critical('CAS login failed')
-      exit(1)
+      sys.exit(1)
 
    temp = session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xklc_list?Ves632DSdyV=NEW_XSD_PYGL')
    zbid = re.search('/jsxsd/xsxk/xklc_view\?jx0502zbid=([0-9A-Z]*)', temp.text).group(1)
@@ -228,7 +256,7 @@ def main():
       data = load_course_data()
    else:
       logging.debug('No existing data found or overwrite existing data, fetch from the server')
-      print('获取全部课程列表......')
+      print('\n获取全部课程列表......')
       start_time = time.time() * 1e3
       data = fetch_course_data()
       print('课程列表获取完成!')
@@ -236,8 +264,8 @@ def main():
 
    create_id_name_map(data)
    if mode == 'batch':
-      print('选课课程:\n' + '\n'.join([item + ' ' + course_name_map[item] for item in config['course_id']]))
-      input('按 Enter 键继续')
+      print('选课课程:\n\n' + '\n'.join([item + ' ' + course_name_map[item] for item in config['course_id']]))
+      input('\n按 Enter 键继续')
       print('开始批量自动选课......')
       start_time = time.time() * 1e3
       success, failed = do_batch_enroll(config['course_id'])
@@ -259,7 +287,9 @@ def main():
          break
       logging.info('Retry enrolling')
       failed_ids = [item['course_id'] for item in failed]
+      start_time = time.time() * 1e3
       success, failed = do_batch_enroll(failed_ids)
+      logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
       print_result_list(success, failed)
 
 
