@@ -243,14 +243,20 @@ def main():
    if not do_login(config['username'], config['password']):
       logging.critical('CAS login failed')
       sys.exit(1)
+   while True:
+      temp = session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xklc_list?Ves632DSdyV=NEW_XSD_PYGL')
+      match_group = re.search('/jsxsd/xsxk/xklc_view\?jx0502zbid=([0-9A-Z]*)', temp.text)
+      if match_group:
+         zbid = match_group.group(1)
 
-   temp = session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xklc_list?Ves632DSdyV=NEW_XSD_PYGL')
-   zbid = re.search('/jsxsd/xsxk/xklc_view\?jx0502zbid=([0-9A-Z]*)', temp.text).group(1)
-   session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xsxk_index?jx0502zbid=' + zbid)  # complete login
+         session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xsxk_index?jx0502zbid=' + zbid)  # complete login
+         break
+      else:
+         print('选课入口尚未开放, 5 秒后重试.')
+         logging.warning('Entry not found, try again in 5 seconds')
+         time.sleep(5)
 
    logging.info('Login completed. Time: {}ms'.format(round(time.time() * 1e3 - start_time), 2))
-
-   # TODO:如选课系统未开放, 轮询等待
 
    if load_course_data_from_file:
       data = load_course_data()
