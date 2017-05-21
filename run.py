@@ -24,7 +24,7 @@ q = Queue()
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/'
 ENROLL_URL = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/fawxkOper?jx0404id={id}&xkzy=&trjf='
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
-VERSION = 'v1.0.0'
+VERSION = 'v1.0.2 pre1'
 
 
 def do_login(username, password):
@@ -196,8 +196,20 @@ def create_id_name_map(data):
    global course_name_map
 
    for course in data:
-      course_name_map[course['jx0404id']] = course['kcmc']
+      if course['fzmc']:
+         course_name_map[course['jx0404id']] = '{}[{}]'.format(course['kcmc'], course['fzmc'])
+      else:
+         course_name_map[course['jx0404id']] = course['kcmc']
+
    logging.debug('ID to name mapping established')
+   with open('./courses.txt', 'w') as f:
+      list_arr = list()
+      for id, cname in course_name_map.items():
+         list_arr.append([id, cname])
+         list_arr.sort(key=lambda a: int(a[0]))
+      for item in list_arr:
+         f.write('{id} {name}\n'.format(id=item[0], name=item[1]))
+   logging.debug('ID to name map written to file')
 
 
 def print_result_list(success, failed):
@@ -287,7 +299,7 @@ def main():
 
    logging.info('Done, %d success, %d failed' % (len(success), len(failed)))
 
-   while True:
+   while len(failed) != 0:
       retry = input('是否尝试重选失败课程? (Y/N)\n>')
       if not retry.lower() == 'y':
          break
