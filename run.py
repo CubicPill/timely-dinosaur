@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import time
+import traceback
 from queue import Queue
 from threading import Thread
 
@@ -282,7 +283,11 @@ def main():
 
    create_id_name_map(data)
    if mode == 'batch':
-      print('选课课程:\n\n' + '\n'.join([item + ' ' + course_name_map[item] for item in config['course_id']]))
+      print('选课课程:\n\n' + '\n'.join(['{} {}'.format(item, course_name_map.get(item)) for item in config['course_id']]))
+      print()
+      for item in config['course_id']:
+         if item not in course_name_map.keys():
+            print('警告: 课程 id 为 {} 的课程无数据. 尝试更新课程列表或检查课程 id 输入'.format(item))
       input('\n按 Enter 键继续')
       print('开始批量自动选课......')
       start_time = time.time() * 1e3
@@ -313,6 +318,10 @@ def main():
 
 if __name__ == '__main__':
    logging.info('********start********')
-   main()
-   input('按 Enter 键退出')
+   try:
+      main()
+      input('按 Enter 键退出')
+   except Exception:
+      logging.warning('********ERROR OCCURRED********')
+      logging.warning(traceback.format_exc())
    logging.info('********exit********')
