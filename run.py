@@ -247,9 +247,10 @@ def main():
    mode = ['batch', 'interactive'][m - 1]
    load_course_data_from_file = False
    if 'course_data.json' in os.listdir('./'):
-      if input('是否重新加载课程数据?(Y/N)\n>').lower() == 'y':
-         load_course_data_from_file = False
+      if not input('是否重新加载课程数据?(Y/N)\n>').lower() == 'n':
          logging.info('Overwrite existing course data')
+      else:
+         load_course_data_from_file = True
 
    print('登录教务系统......')
    start_time = time.time() * 1e3
