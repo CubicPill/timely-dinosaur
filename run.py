@@ -25,7 +25,7 @@ q = Queue()
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/'
 ENROLL_URL = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/fawxkOper?jx0404id={id}&xkzy=&trjf='
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
-VERSION = 'v1.0.2 pre1'
+VERSION = 'v1.0.3'
 
 
 def do_login(username, password):
