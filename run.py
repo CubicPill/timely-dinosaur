@@ -150,6 +150,12 @@ def fetch_course_data():
       'iDisplayLength': 750
    }
 
+   url_required = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkBxxk'
+   # 必修选课
+
+   url_elective = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkXxxk'
+   # 选修选课
+
    url_sem_plan = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkBxqjhxk'
    # 本学期计划选课
 
@@ -163,18 +169,37 @@ def fetch_course_data():
    # 公选课选课
 
    try:
-      sem_plan = session.post(url_sem_plan, data=params)
-      if sem_plan.status_code == 404:
+      required = session.post(url_required, data=params)
+      if required.status_code == 404:
          print('登录状态错误!')
          logging.critical('Error occurred while querying course data')
          sys.exit(1)
-      sem_plan = sem_plan.json()
-      logging.debug('Semester planning courses fetching done, total: {}, fetched: {}'
+      required = required.json()
+      logging.debug('Required courses fetching done, total: {}, fetched: {}'
+                    .format(required['iTotalRecords'], len(required['aaData'])))
+   except json.JSONDecodeError:
+      logging.warning('Required courses fetching error')
+      required = {'aaData': []}
+      print('错误: 必修选课课程信息获取失败!')
+
+   try:
+      elective = session.post(url_elective, data=params).json()
+      logging.debug('Elective courses fetching done, total: {}, fetched: {}'
+                    .format(elective['iTotalRecords'], len(elective['aaData'])))
+   except json.JSONDecodeError:
+      logging.warning('Elective courses fetching error')
+      elective = {'aaData': []}
+      print('错误: 选修选课课程信息获取失败!')
+
+   try:
+      sem_plan = session.post(url_sem_plan, data=params).json()
+      logging.debug('Cross grade courses fetching done, total: {}, fetched: {}'
                     .format(sem_plan['iTotalRecords'], len(sem_plan['aaData'])))
    except json.JSONDecodeError:
       logging.warning('Semester planning courses fetching error')
       sem_plan = {'aaData': []}
       print('错误: 学期内计划选课课程信息获取失败!')
+
    try:
       cross_grade = session.post(url_cross_grade, data=params).json()
       logging.debug('Cross grade courses fetching done, total: {}, fetched: {}'
@@ -200,7 +225,8 @@ def fetch_course_data():
       common = {'aaData': []}
       print('错误: 公选课选课课程信息获取失败!')
 
-   data = sem_plan.get('aaData') + cross_grade.get('aaData') + cross_dept.get('aaData') + common.get('aaData')
+   data = required.get('aaData') + elective.get('aaData') + sem_plan.get('aaData') + cross_grade.get('aaData') \
+          + cross_dept.get('aaData') + common.get('aaData')
    logging.debug('All course data fetching done. {} records in total.'.format(len(data)))
 
    with open('course_data.json', 'w') as f:
