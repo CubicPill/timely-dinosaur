@@ -162,28 +162,45 @@ def fetch_course_data():
    url_common = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkGgxxkxk'
    # 公选课选课
 
-   sem_plan = session.post(url_sem_plan, data=params)
-   if sem_plan.status_code == 404:
-      print('登录状态错误!')
-      logging.critical('Error occurred while querying course data')
-      sys.exit(1)
-   sem_plan = sem_plan.json()
-   logging.debug('Semester planning courses fetching done, total: {}, fetched: {}'
-                 .format(sem_plan['iTotalRecords'], len(sem_plan['aaData'])))
+   try:
+      sem_plan = session.post(url_sem_plan, data=params)
+      if sem_plan.status_code == 404:
+         print('登录状态错误!')
+         logging.critical('Error occurred while querying course data')
+         sys.exit(1)
+      sem_plan = sem_plan.json()
+      logging.debug('Semester planning courses fetching done, total: {}, fetched: {}'
+                    .format(sem_plan['iTotalRecords'], len(sem_plan['aaData'])))
+   except json.JSONDecodeError:
+      logging.warning('Semester planning courses fetching error')
+      sem_plan = {'aaData': []}
+      print('错误: 学期内计划选课课程信息获取失败!')
+   try:
+      cross_grade = session.post(url_cross_grade, data=params).json()
+      logging.debug('Cross grade courses fetching done, total: {}, fetched: {}'
+                    .format(cross_grade['iTotalRecords'], len(cross_grade['aaData'])))
+   except json.JSONDecodeError:
+      logging.warning('Cross grade courses fetching error')
+      cross_grade = {'aaData': []}
+      print('错误: 跨年级选课课程信息获取失败!')
+   try:
+      cross_dept = session.post(url_cross_dept, data=params).json()
+      logging.debug('Cross department courses fetching done, total: {}, fetched: {}'
+                    .format(cross_dept['iTotalRecords'], len(cross_dept['aaData'])))
+   except json.JSONDecodeError:
+      logging.warning('Cross department courses fetching error')
+      cross_dept = {'aaData': []}
+      print('错误: 跨专业选课课程信息获取失败!')
+   try:
+      common = session.post(url_common, data=params).json()
+      logging.debug('Common courses fetching done, total: {}, fetched: {}'
+                    .format(common['iTotalRecords'], len(common['aaData'])))
+   except json.JSONDecodeError:
+      logging.warning('Common courses fetching error')
+      common = {'aaData': []}
+      print('错误: 公选课选课课程信息获取失败!')
 
-   cross_grade = session.post(url_cross_grade, data=params).json()
-   logging.debug('Cross grade courses fetching done, total: {}, fetched: {}'
-                 .format(cross_grade['iTotalRecords'], len(cross_grade['aaData'])))
-
-   cross_dept = session.post(url_cross_dept, data=params).json()
-   logging.debug('Cross department courses fetching done, total: {}, fetched: {}'
-                 .format(cross_dept['iTotalRecords'], len(cross_dept['aaData'])))
-
-   common = session.post(url_common, data=params).json()
-   logging.debug('Common courses fetching done, total: {}, fetched: {}'
-                 .format(common['iTotalRecords'], len(common['aaData'])))
-
-   data = sem_plan['aaData'] + cross_grade['aaData'] + cross_dept['aaData'] + common['aaData']
+   data = sem_plan.get('aaData') + cross_grade.get('aaData') + cross_dept.get('aaData') + common.get('aaData')
    logging.debug('All course data fetching done. {} records in total.'.format(len(data)))
 
    with open('course_data.json', 'w') as f:
