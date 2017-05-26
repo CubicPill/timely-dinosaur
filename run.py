@@ -6,6 +6,7 @@ import re
 import sys
 import time
 import traceback
+from _thread import start_new_thread
 from queue import Queue
 from threading import Thread
 
@@ -39,6 +40,7 @@ course_name_map = dict()
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filename='logging.log')
 logging.getLogger('requests').setLevel(logging.ERROR)
 q = Queue()
+print_queue = Queue()
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/main.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
 VERSION = 'v1.1.0 pre1'
@@ -51,6 +53,12 @@ def validate_session():
    except requests.RequestException:
       pass
    return False
+
+
+def thread_print():
+   while True:
+      content = print_queue.get()
+      print(content, flush=True)
 
 
 def do_login(username, password):
@@ -112,12 +120,13 @@ def _enroll(course_id, __type, thread=False):
    course_name = course_name_map.get(course_id)['name']
    result['name'] = course_name
    if result['success']:
-      print(colorama.Fore.LIGHTGREEN_EX +
-            'SUCCESS!!! 课程 {name} ({id}) 选课成功!'.format(name=course_name, id=course_id))
+      print_queue.put(colorama.Fore.LIGHTGREEN_EX +
+                      'SUCCESS!!! 课程 {name} ({id}) 选课成功!'
+                      .format(name=course_name, id=course_id))
    else:
-      print(colorama.Fore.LIGHTRED_EX +
-            'FAILED!!! 课程 {name} ({id}) {message}'.format(name=course_name, id=course_id, message=result['message']))
-   sys.stdout.flush()
+      print_queue.put(colorama.Fore.LIGHTRED_EX +
+                      'FAILED!!! 课程 {name} ({id}) {message}'
+                      .format(name=course_name, id=course_id, message=result['message']))
    if thread:
       q.put(result)
    return result
@@ -334,11 +343,16 @@ def print_result_list(success, failed):
 
 def main():
    colorama.init(autoreset=True)
-   print('Timely Dinosaur ' + VERSION + ' Author: CubicPill')
+   print('Timely Dinosaur ' + VERSION + ', Author: CubicPill')
    config = load_config()
    need_login = True
-   m = int(input('选择模式: 1 批量选课 2 单项选课\n>'))
-
+   while True:
+      try:
+         m = int(input('选择模式: 1 批量选课 2 单项选课\n>'))
+         if m == 1 or m == 2:
+            break
+      except Exception:
+         pass
    mode = ['batch', 'interactive'][m - 1]
    load_course_data_from_file = False
    if 'course_data.json' in os.listdir('./'):
@@ -354,7 +368,7 @@ def main():
       if validate_session():
          logging.debug('Pickle session valid')
          need_login = False
-         print(colorama.Fore.LIGHTGREEN_EX + '登录状态已恢复')
+         print(colorama.Fore.LIGHTGREEN_EX + '登录状态已恢复\n')
       else:
          logging.debug('Pickle session expired, try login')
    else:
@@ -391,6 +405,10 @@ def main():
       logging.info('Course list fetching done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
 
    create_id_name_map(data)
+   start_new_thread(thread_print, ())
+   for url in ENROLL_URLS:
+      session.get(url)
+
    for course_id in config['course_id']:
       if course_id not in course_name_map.keys():
          logging.error('ID {} not found in data, skip'.format(course_id))
@@ -417,6 +435,7 @@ def main():
    else:
       sys.exit(1)
 
+   time.sleep(0.1)
    print('自动选课完成!\n')
 
    print_result_list(success, failed)
@@ -432,6 +451,8 @@ def main():
       start_time = time.time() * 1e3
       success, failed = do_batch_enroll(failed_ids)
       logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
+      time.sleep(0.1)
+      # here I don't know why but if you don't add this, the output will become a mess. tried flush(), not working
       print_result_list(success, failed)
 
 
