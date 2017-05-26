@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import pickle
 import re
 import sys
 import time
@@ -8,6 +9,7 @@ import traceback
 from queue import Queue
 from threading import Thread
 
+import colorama
 import requests
 from bs4 import BeautifulSoup
 
@@ -16,16 +18,39 @@ try:
 except OSError:
    pass
 
+ENROLL_URLS = [
+   'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/bxxkOper?jx0404id={id}&xkzy=&trjf=',
+   # 必修选课
+   'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xxxkOper?jx0404id={id}&xkzy=&trjf=',
+   # 选修选课
+   'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/bxqjhxkOper?jx0404id={id}&xkzy=&trjf=',
+   # 本学期计划选课
+   'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/knjxkOper?jx0404id={id}&xkzy=&trjf=',
+   # 跨年级
+   'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/fawxkOper?jx0404id={id}&xkzy=&trjf=',
+   # 跨专业
+   'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/ggxxkxkOper?jx0404id={id}&xkzy=&trjf='
+   # 公选课
+]
+TYPES_STR = ['必修', '选修', '本学期计划', '跨年级', '跨专业', '公共课']
 session = requests.session()
 course_name_map = dict()
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filename='logging.log')
 logging.getLogger('requests').setLevel(logging.ERROR)
 q = Queue()
-MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/'
-ENROLL_URL = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/fawxkOper?jx0404id={id}&xkzy=&trjf='
+MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/main.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
-VERSION = 'v1.0.3'
+VERSION = 'v1.1.0 pre1'
+
+
+def validate_session():
+   try:
+      if session.get(MAIN_URL, allow_redirects=False, timeout=10).status_code == 200:
+         return True
+   except requests.RequestException:
+      pass
+   return False
 
 
 def do_login(username, password):
@@ -47,6 +72,8 @@ def do_login(username, password):
       return False
    else:
       print('登录成功!')
+      with open('session.pickle', 'wb') as f:
+         pickle.dump(session, f)
       return True
 
 
@@ -62,31 +89,35 @@ def load_config():
 
 
 class EnrollThread(Thread):
-   def __init__(self, course_id):
+   def __init__(self, course_id, __type):
       Thread.__init__(self)
       self.id = course_id
+      self.type = __type
 
    def run(self):
-      _enroll(self.id, True)
+      _enroll(self.id, self.type, True)
 
 
-def _enroll(course_id, thread=False):
+def _enroll(course_id, __type, thread=False):
    logging.debug('Enrolling course id {}'.format(course_id))
    start_time = time.time() * 1e3
    try:
-      result = session.get(ENROLL_URL.format(id=course_id), timeout=5).json()
+      result = session.get(ENROLL_URLS[__type].format(id=course_id), timeout=5).json()
       logging.debug('Course id {} enrolling done, success: {}, Time {}ms'
                     .format(course_id, result['success'], round(time.time() * 1e3 - start_time), 2))
    except requests.Timeout:
       logging.error('Connection timed out!')
       result = {'success': False, 'message': '错误: 网络连接超时'}
    result['course_id'] = course_id
-   course_name = course_name_map.get(course_id)
+   course_name = course_name_map.get(course_id)['name']
    result['name'] = course_name
    if result['success']:
-      print('SUCCESS!!! 课程 {name} ({id}) 选课成功!'.format(name=course_name, id=course_id))
+      print(colorama.Fore.LIGHTGREEN_EX +
+            'SUCCESS!!! 课程 {name} ({id}) 选课成功!'.format(name=course_name, id=course_id))
    else:
-      print('FAILED!!! 课程 {name} ({id}) {message}'.format(name=course_name, id=course_id, message=result['message']))
+      print(colorama.Fore.LIGHTRED_EX +
+            'FAILED!!! 课程 {name} ({id}) {message}'.format(name=course_name, id=course_id, message=result['message']))
+   sys.stdout.flush()
    if thread:
       q.put(result)
    return result
@@ -97,7 +128,7 @@ def do_batch_enroll(course_ids):
    failed = list()
    threads = []
    for course_id in course_ids:
-      thread = EnrollThread(course_id)
+      thread = EnrollThread(course_id, course_name_map[course_id]['type'])
       thread.start()
       threads.append(thread)
    for thread in threads:
@@ -117,22 +148,31 @@ def do_batch_enroll(course_ids):
 def do_interactive_enroll():
    success = list()
    failed = list()
-   while True:
+   print(colorama.Fore.LIGHTYELLOW_EX +
+         '警告: 交互式单项选课仅作为调试用途, 输入格式错误可能导致选课失败或程序崩溃, 请谨慎使用')
 
-      course_id = input('输入课程ID. 输入 "exit" 结束.\nID:')
-      if course_id == 'exit':
-         break
-      elif not re.match('\d{15}$', course_id):
-         cont = input('ID {} 格式不匹配. 是否继续?(Y/N)\n>'.format(course_id))
-         if cont.lower() == 'y':
-            pass
+   while True:
+      try:
+         in_text = input('输入课程ID和课程类型编号(0-5), 以空格分隔. 输入 "exit" 结束.\nID:')
+         if in_text == 'exit':
+            break
+         elif not re.match('\d{15} \d$', in_text):
+            cont = input('输入格式不匹配. 是否继续?(Y/N)\n>')
+            if cont.lower() == 'y':
+               pass
+            else:
+               continue
+         course_id, __type = in_text.split(' ')
+         __type = int(__type)
+         result = _enroll(course_id, __type, False)
+         if result['success']:
+            success.append(result)
          else:
-            continue
-      result = _enroll(course_id)
-      if result['success']:
-         success.append(result)
-      else:
-         failed.append(result)
+            failed.append(result)
+      except Exception:
+         logging.error('Error occurred in interactive enrolling')
+         logging.error(traceback.format_exc())
+         print(traceback.format_exc())
 
    return success, failed
 
@@ -175,6 +215,8 @@ def fetch_course_data():
          logging.critical('Error occurred while querying course data')
          sys.exit(1)
       required = required.json()
+      for item in required.get('aaData'):
+         item['__type'] = 0
       logging.debug('Required courses fetching done, total: {}, fetched: {}'
                     .format(required['iTotalRecords'], len(required['aaData'])))
    except json.JSONDecodeError:
@@ -184,6 +226,8 @@ def fetch_course_data():
 
    try:
       elective = session.post(url_elective, data=params).json()
+      for item in elective.get('aaData'):
+         item['__type'] = 1
       logging.debug('Elective courses fetching done, total: {}, fetched: {}'
                     .format(elective['iTotalRecords'], len(elective['aaData'])))
    except json.JSONDecodeError:
@@ -193,6 +237,8 @@ def fetch_course_data():
 
    try:
       sem_plan = session.post(url_sem_plan, data=params).json()
+      for item in sem_plan.get('aaData'):
+         item['__type'] = 2
       logging.debug('Cross grade courses fetching done, total: {}, fetched: {}'
                     .format(sem_plan['iTotalRecords'], len(sem_plan['aaData'])))
    except json.JSONDecodeError:
@@ -202,6 +248,8 @@ def fetch_course_data():
 
    try:
       cross_grade = session.post(url_cross_grade, data=params).json()
+      for item in cross_grade.get('aaData'):
+         item['__type'] = 3
       logging.debug('Cross grade courses fetching done, total: {}, fetched: {}'
                     .format(cross_grade['iTotalRecords'], len(cross_grade['aaData'])))
    except json.JSONDecodeError:
@@ -210,6 +258,8 @@ def fetch_course_data():
       print('错误: 跨年级选课课程信息获取失败!')
    try:
       cross_dept = session.post(url_cross_dept, data=params).json()
+      for item in cross_dept.get('aaData'):
+         item['__type'] = 4
       logging.debug('Cross department courses fetching done, total: {}, fetched: {}'
                     .format(cross_dept['iTotalRecords'], len(cross_dept['aaData'])))
    except json.JSONDecodeError:
@@ -218,6 +268,8 @@ def fetch_course_data():
       print('错误: 跨专业选课课程信息获取失败!')
    try:
       common = session.post(url_common, data=params).json()
+      for item in common.get('aaData'):
+         item['__type'] = 5
       logging.debug('Common courses fetching done, total: {}, fetched: {}'
                     .format(common['iTotalRecords'], len(common['aaData'])))
    except json.JSONDecodeError:
@@ -240,27 +292,31 @@ def create_id_name_map(data):
    global course_name_map
 
    for course in data:
+      course_name_map[course['jx0404id']] = dict()
       if course['fzmc']:
-         course_name_map[course['jx0404id']] = '{}[{}]'.format(course['kcmc'], course['fzmc'])
+         course_name_map[course['jx0404id']]['name'] = '{}[{}]'.format(course['kcmc'], course['fzmc'])
       else:
-         course_name_map[course['jx0404id']] = course['kcmc']
+         course_name_map[course['jx0404id']]['name'] = course['kcmc']
+      course_name_map[course['jx0404id']]['type'] = course['__type']
+      course_name_map[course['jx0404id']]['cid'] = course['kch']
 
    logging.debug('ID to name mapping established')
    with open('./courses.txt', 'w') as f:
       list_arr = list()
-      for id, cname in course_name_map.items():
-         list_arr.append([id, cname])
-         list_arr.sort(key=lambda a: int(a[0]))
+      for key, value in course_name_map.items():
+         list_arr.append([value['cid'].replace(' ', ''), TYPES_STR[value['type']], value['name']])
+         list_arr.sort(key=lambda a: a[0])
       for item in list_arr:
-         f.write('{id} {name}\n'.format(id=item[0], name=item[1]))
+         f.write('{cid} {type} {name}\n'.format(cid=item[0], type=item[1], name=item[2]))
    logging.debug('ID to name map written to file')
 
 
 def print_result_list(success, failed):
-   print('--------成功列表--------')
+   print('\n--------成功列表--------')
    if success:
       for s in success:
-         print('{name} ({id}) 选课成功!'.format(name=s['name'], id=s['course_id']))
+         print(colorama.Fore.LIGHTGREEN_EX +
+               '{name} ({id}) 选课成功!'.format(name=s['name'], id=s['course_id']))
    else:
       print('无')
    print('------------------------\n')
@@ -268,23 +324,19 @@ def print_result_list(success, failed):
    print('--------失败列表--------')
    if failed:
       for f in failed:
-         print('{name} ({id}) {msg}'.format(name=f['name'], id=f['course_id'], msg=f['message']))
+         print(colorama.Fore.LIGHTYELLOW_EX +
+               '{name} ({id}) {msg}'.format(name=f['name'], id=f['course_id'], msg=f['message']))
    else:
       print('无')
    print('------------------------')
-   print('\n成功 %d, 失败 %d' % (len(success), len(failed)))
-
-
-def load_course_data():
-   with open('course_data.json') as f:
-      r = json.load(f)
-      logging.debug('Existing course data loaded')
-      return r
+   print('成功 %d, 失败 %d\n' % (len(success), len(failed)))
 
 
 def main():
+   colorama.init(autoreset=True)
    print('Timely Dinosaur ' + VERSION + ' Author: CubicPill')
    config = load_config()
+   need_login = True
    m = int(input('选择模式: 1 批量选课 2 单项选课\n>'))
 
    mode = ['batch', 'interactive'][m - 1]
@@ -294,18 +346,31 @@ def main():
          logging.info('Overwrite existing course data')
       else:
          load_course_data_from_file = True
-
-   print('登录教务系统......')
-   start_time = time.time() * 1e3
-   if not do_login(config['username'], config['password']):
-      logging.critical('CAS login failed')
-      sys.exit(1)
+   if 'session.pickle' in os.listdir('./'):
+      global session
+      with open('session.pickle', 'rb') as f:
+         session = pickle.load(f)
+         logging.debug('Session restored from pickle file')
+      if validate_session():
+         logging.debug('Pickle session valid')
+         need_login = False
+         print(colorama.Fore.LIGHTGREEN_EX + '登录状态已恢复')
+      else:
+         logging.debug('Pickle session expired, try login')
+   else:
+      logging.debug('No saved session found')
+   if need_login:
+      print('登录教务系统......', end='')
+      start_time = time.time() * 1e3
+      if not do_login(config['username'], config['password']):
+         logging.critical('CAS login failed')
+         sys.exit(1)
+      logging.info('Login completed. Time: {}ms'.format(round(time.time() * 1e3 - start_time), 2))
    while True:
       temp = session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xklc_list?Ves632DSdyV=NEW_XSD_PYGL')
       match_group = re.search('/jsxsd/xsxk/xklc_view\?jx0502zbid=([0-9A-Z]*)', temp.text)
       if match_group:
          zbid = match_group.group(1)
-
          session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xsxk_index?jx0502zbid=' + zbid)  # complete login
          break
       else:
@@ -313,26 +378,36 @@ def main():
          logging.warning('Entry not found, try again in 5 seconds')
          time.sleep(5)
 
-   logging.info('Login completed. Time: {}ms'.format(round(time.time() * 1e3 - start_time), 2))
-
    if load_course_data_from_file:
-      data = load_course_data()
+      with open('course_data.json') as f:
+         data = json.load(f)
+         logging.debug('Existing course data loaded')
    else:
       logging.debug('No existing data found or overwrite existing data, fetch from the server')
-      print('\n获取全部课程列表......')
+      print('\n获取全部课程列表......', end='')
       start_time = time.time() * 1e3
       data = fetch_course_data()
       print('课程列表获取完成!')
       logging.info('Course list fetching done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
 
    create_id_name_map(data)
+   for course_id in config['course_id']:
+      if course_id not in course_name_map.keys():
+         logging.error('ID {} not found in data, skip'.format(course_id))
+         print(colorama.Fore.LIGHTRED_EX + '错误: 课程ID号{}无数据, 将从队列中删除. 使用交互式选课以忽略此错误'.format(course_id))
+         config['course_id'].remove(course_id)
+
    if mode == 'batch':
-      print('选课课程:\n\n' + '\n'.join(['{} {}'.format(item, course_name_map.get(item)) for item in config['course_id']]))
+      print('\n选课课程:')
+      for course_id in config['course_id']:
+         print('{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
       print()
       for item in config['course_id']:
          if item not in course_name_map.keys():
-            print('警告: 课程 id 为 {} 的课程无数据. 尝试更新课程列表或检查课程 id 输入'.format(item))
-      input('\n按 Enter 键继续')
+            print(colorama.Fore.LIGHTRED_EX +
+                  '警告: 课程 id 为 {} 的课程无数据. 尝试更新课程列表或检查课程 id 输入'.format(item))
+
+      input('按 Enter 键继续\n')
       print('开始批量自动选课......')
       start_time = time.time() * 1e3
       success, failed = do_batch_enroll(config['course_id'])
@@ -342,7 +417,7 @@ def main():
    else:
       sys.exit(1)
 
-   print('自动选课完成!')
+   print('自动选课完成!\n')
 
    print_result_list(success, failed)
 
@@ -364,8 +439,12 @@ if __name__ == '__main__':
    logging.info('********start********')
    try:
       main()
-      input('按 Enter 键退出')
    except Exception:
       logging.warning('********ERROR OCCURRED********')
       logging.warning(traceback.format_exc())
+      print(colorama.Fore.LIGHTRED_EX + '错误!!!!!!')
+      print(colorama.Fore.LIGHTRED_EX + traceback.format_exc())
+      input('按 Enter 键退出')
+      sys.exit(1)
+   input('按 Enter 键退出')
    logging.info('********exit********')
