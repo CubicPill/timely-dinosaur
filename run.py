@@ -43,7 +43,7 @@ q = Queue()
 print_queue = Queue()
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/main.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
-VERSION = 'v1.1.0'
+VERSION = 'v1.1.1'
 
 
 def validate_session():
@@ -110,7 +110,10 @@ def _enroll(course_id, __type, thread=False):
    logging.debug('Enrolling course id {}'.format(course_id))
    start_time = time.time() * 1e3
    try:
-      result = session.get(ENROLL_URLS[__type].format(id=course_id), timeout=5).json()
+      req = session.get(ENROLL_URLS[__type].format(id=course_id), timeout=5)
+      result = req.json()
+      if req.status_code != 200:
+         result['message'] = 'HTTP {}'.format(req.status_code)
       logging.debug('Course id {} enrolling done, success: {}, Time {}ms'
                     .format(course_id, result['success'], round(time.time() * 1e3 - start_time), 2))
    except requests.Timeout:
@@ -120,8 +123,9 @@ def _enroll(course_id, __type, thread=False):
    if course_name_map.get(course_id):
       course_name = course_name_map.get(course_id)['name']
    else:
-      course_name = None
+      course_name = '<id: {}>'.format(course_id)
    result['name'] = course_name
+
    if result['success']:
       print_queue.put(colorama.Fore.LIGHTGREEN_EX +
                       'SUCCESS!!! 课程 {name} 选课成功!'
@@ -169,14 +173,25 @@ def do_interactive_enroll():
          in_text = input('输入课程ID和课程类型编号, 以空格分隔. 输入 "exit" 结束.\nID:')
          if in_text == 'exit':
             break
-         elif not re.match('\d{15} \d$', in_text):
-            cont = input('输入格式不匹配. 是否继续?(Y/N)\n>')
+         elif in_text == '':
+            continue
+         elif not re.match('.* \d$', in_text):
+            print(colorama.Fore.LIGHTRED_EX + '格式错误!')
+            continue
+         course_id, __type = in_text.split(' ')
+         if not re.match('\d{15}$', course_id):
+            print(colorama.Fore.LIGHTYELLOW_EX + '输入格式不匹配. 是否继续?(Y/N)')
+            cont = input('>')
             if cont.lower() == 'y':
                pass
             else:
                continue
-         course_id, __type = in_text.split(' ')
          __type = int(__type)
+         course_name_map[course_id] = dict()
+         course_name_map[course_id]['type'] = __type
+         course_name_map[course_id]['name'] = '<id: {}>'.format(course_id)
+         course_name_map[course_id]['cid'] = 'DUMMY001'
+
          result = _enroll(course_id, __type, False)
          if result['success']:
             success.append(result)
@@ -185,7 +200,7 @@ def do_interactive_enroll():
       except Exception:
          logging.error('Error occurred in interactive enrolling')
          logging.error(traceback.format_exc())
-         print(traceback.format_exc())
+         print(colorama.Fore.LIGHTRED_EX + traceback.format_exc())
       time.sleep(0.1)
 
    return success, failed
