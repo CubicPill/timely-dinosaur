@@ -43,7 +43,7 @@ q = Queue()
 print_queue = Queue()
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/main.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
-VERSION = 'v1.1.0 pre1'
+VERSION = 'v1.1.0'
 
 
 def validate_session():
@@ -76,10 +76,10 @@ def do_login(username, password):
    error = soup_resp.find('div', {'class': 'errors', 'id': 'msg'})
 
    if error:
-      print('登录失败! 错误信息: ' + error.text.replace('.', '. '))
+      print(colorama.Fore.LIGHTRED_EX + '登录失败! 错误信息: ' + error.text.replace('.', '. ') + '\n')
       return False
    else:
-      print('登录成功!')
+      print(colorama.Fore.LIGHTGREEN_EX + '登录成功!\n')
       with open('session.pickle', 'wb') as f:
          pickle.dump(session, f)
       return True
@@ -87,7 +87,7 @@ def do_login(username, password):
 
 def load_config():
    if 'config.json' not in os.listdir('./'):
-      print('未找到配置文件!')
+      print(colorama.Fore.LIGHTRED_EX + '未找到配置文件!')
       input('按 Enter 键退出')
       sys.exit(1)
    with open('config.json') as f:
@@ -124,12 +124,12 @@ def _enroll(course_id, __type, thread=False):
    result['name'] = course_name
    if result['success']:
       print_queue.put(colorama.Fore.LIGHTGREEN_EX +
-                      'SUCCESS!!! 课程 {name} ({id}) 选课成功!'
-                      .format(name=course_name, id=course_id))
+                      'SUCCESS!!! 课程 {name} 选课成功!'
+                      .format(name=course_name))
    else:
       print_queue.put(colorama.Fore.LIGHTRED_EX +
-                      'FAILED!!! 课程 {name} ({id}) {message}'
-                      .format(name=course_name, id=course_id, message=result['message']))
+                      'FAILED!!! 课程 {name} {message}'
+                      .format(name=course_name, message=result['message']))
    if thread:
       q.put(result)
    return result
@@ -162,10 +162,11 @@ def do_interactive_enroll():
    failed = list()
    print(colorama.Fore.LIGHTYELLOW_EX +
          '警告: 交互式单项选课仅作为调试用途, 输入格式错误可能导致选课失败或程序崩溃, 请谨慎使用')
+   print('课程类型(0-5): ' + ' '.join(['必修', '选修', '本学期计划', '跨年级', '跨专业', '公共课']))
 
    while True:
       try:
-         in_text = input('输入课程ID和课程类型编号(0-5), 以空格分隔. 输入 "exit" 结束.\nID:')
+         in_text = input('输入课程ID和课程类型编号, 以空格分隔. 输入 "exit" 结束.\nID:')
          if in_text == 'exit':
             break
          elif not re.match('\d{15} \d$', in_text):
@@ -325,23 +326,21 @@ def create_id_name_map(data):
 
 
 def print_result_list(success, failed):
-   print('\n--------成功列表--------')
+   print(colorama.Fore.LIGHTGREEN_EX + '\n--------成功列表--------')
    if success:
       for s in success:
-         print(colorama.Fore.LIGHTGREEN_EX +
-               '{name} ({id}) 选课成功!'.format(name=s['name'], id=s['course_id']))
+         print(colorama.Fore.LIGHTGREEN_EX + s['name'])
    else:
       print('无')
-   print('------------------------\n')
+   print(colorama.Fore.LIGHTGREEN_EX + '------------------------\n')
 
-   print('--------失败列表--------')
+   print(colorama.Fore.LIGHTYELLOW_EX + '--------失败列表--------')
    if failed:
       for f in failed:
-         print(colorama.Fore.LIGHTYELLOW_EX +
-               '{name} ({id}) {msg}'.format(name=f['name'], id=f['course_id'], msg=f['message']))
+         print(colorama.Fore.LIGHTYELLOW_EX + f['name'])
    else:
       print('无')
-   print('------------------------')
+   print(colorama.Fore.LIGHTYELLOW_EX + '------------------------')
    print('成功 %d, 失败 %d\n' % (len(success), len(failed)))
 
 
@@ -357,7 +356,7 @@ def main():
             break
       except Exception:
          pass
-   mode = ['batch', 'interactive'][m - 1]
+
    load_course_data_from_file = False
    if 'course_data.json' in os.listdir('./'):
       if not input('是否重新加载课程数据?(Y/N)\n>').lower() == 'n':
@@ -365,6 +364,7 @@ def main():
       else:
          load_course_data_from_file = True
    if 'session.pickle' in os.listdir('./'):
+      print('读取登陆信息......', end='')
       global session
       with open('session.pickle', 'rb') as f:
          session = pickle.load(f)
@@ -374,6 +374,7 @@ def main():
          need_login = False
          print(colorama.Fore.LIGHTGREEN_EX + '登录状态已恢复\n')
       else:
+         print(colorama.Fore.LIGHTYELLOW_EX + '登录信息已过期\n')
          logging.debug('Pickle session expired, try login')
    else:
       logging.debug('No saved session found')
@@ -402,10 +403,10 @@ def main():
          logging.debug('Existing course data loaded')
    else:
       logging.debug('No existing data found or overwrite existing data, fetch from the server')
-      print('\n获取全部课程列表......', end='')
+      print('获取全部课程列表......', end='')
       start_time = time.time() * 1e3
       data = fetch_course_data()
-      print('课程列表获取完成!')
+      print(colorama.Fore.LIGHTGREEN_EX + '课程列表获取完成!\n')
       logging.info('Course list fetching done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
 
    create_id_name_map(data)
@@ -413,7 +414,7 @@ def main():
    for url in ENROLL_URLS:
       session.get(url)
 
-   if mode == 'batch':
+   if m == 1:  # batch mode
       for course_id in config['course_id']:
          if course_id not in course_name_map.keys():
             logging.error('ID {} not found in data, skip'.format(course_id))
@@ -421,7 +422,8 @@ def main():
             config['course_id'].remove(course_id)
       print('\n选课课程:')
       for course_id in config['course_id']:
-         print('{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
+         print(colorama.Fore.LIGHTCYAN_EX +
+               '{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
       print()
       for item in config['course_id']:
          if item not in course_name_map.keys():
@@ -429,17 +431,17 @@ def main():
                   '警告: 课程 id 为 {} 的课程无数据. 尝试更新课程列表或检查课程 id 输入'.format(item))
 
       input('按 Enter 键继续\n')
-      print('开始批量自动选课......')
+      print('开始批量自动选课......\n')
       start_time = time.time() * 1e3
       success, failed = do_batch_enroll(config['course_id'])
       logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
-   elif mode == 'interactive':
+   elif m == 2:  # interactive mode
       success, failed = do_interactive_enroll()
    else:
       sys.exit(1)
 
    time.sleep(0.1)
-   print('自动选课完成!\n')
+   print(colorama.Fore.LIGHTBLUE_EX + '\n自动选课完成!\n')
 
    print_result_list(success, failed)
 
@@ -468,7 +470,7 @@ if __name__ == '__main__':
       logging.warning(traceback.format_exc())
       print(colorama.Fore.LIGHTRED_EX + '错误!!!!!!')
       print(colorama.Fore.LIGHTRED_EX + traceback.format_exc())
-      input('按 Enter 键退出')
+      input('\n按 Enter 键退出')
       sys.exit(1)
-   input('按 Enter 键退出')
+   input('\n按 Enter 键退出')
    logging.info('********exit********')
