@@ -117,7 +117,10 @@ def _enroll(course_id, __type, thread=False):
       logging.error('Connection timed out!')
       result = {'success': False, 'message': '错误: 网络连接超时'}
    result['course_id'] = course_id
-   course_name = course_name_map.get(course_id)['name']
+   if course_name_map.get(course_id):
+      course_name = course_name_map.get(course_id)['name']
+   else:
+      course_name = None
    result['name'] = course_name
    if result['success']:
       print_queue.put(colorama.Fore.LIGHTGREEN_EX +
@@ -182,6 +185,7 @@ def do_interactive_enroll():
          logging.error('Error occurred in interactive enrolling')
          logging.error(traceback.format_exc())
          print(traceback.format_exc())
+      time.sleep(0.1)
 
    return success, failed
 
@@ -409,13 +413,12 @@ def main():
    for url in ENROLL_URLS:
       session.get(url)
 
-   for course_id in config['course_id']:
-      if course_id not in course_name_map.keys():
-         logging.error('ID {} not found in data, skip'.format(course_id))
-         print(colorama.Fore.LIGHTRED_EX + '错误: 课程ID号{}无数据, 将从队列中删除. 使用交互式选课以忽略此错误'.format(course_id))
-         config['course_id'].remove(course_id)
-
    if mode == 'batch':
+      for course_id in config['course_id']:
+         if course_id not in course_name_map.keys():
+            logging.error('ID {} not found in data, skip'.format(course_id))
+            print(colorama.Fore.LIGHTRED_EX + '错误: 课程ID号{}无数据, 将从队列中删除. 使用交互式选课以忽略此错误'.format(course_id))
+            config['course_id'].remove(course_id)
       print('\n选课课程:')
       for course_id in config['course_id']:
          print('{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
