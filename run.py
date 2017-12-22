@@ -43,7 +43,7 @@ q = Queue()
 print_queue = Queue()
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/main.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
-VERSION = 'v1.2.0'
+VERSION = 'v1.2.1'
 
 
 def validate_session():
@@ -379,22 +379,22 @@ def create_id_name_map(data):
 
 
 def print_result_list(success, failed):
-    print(colorama.Fore.LIGHTGREEN_EX + '\n--------成功列表--------')
+    print_queue.put(colorama.Fore.LIGHTGREEN_EX + '\n--------成功列表--------')
     if success:
         for s in success:
-            print(colorama.Fore.LIGHTGREEN_EX + s['name'])
+            print_queue.put(colorama.Fore.LIGHTGREEN_EX + s['name'])
     else:
-        print('无')
-    print(colorama.Fore.LIGHTGREEN_EX + '------------------------\n')
+        print_queue.put('无')
+    print_queue.put(colorama.Fore.LIGHTGREEN_EX + '------------------------\n')
 
-    print(colorama.Fore.LIGHTYELLOW_EX + '--------失败列表--------')
+    print_queue.put(colorama.Fore.LIGHTYELLOW_EX + '--------失败列表--------')
     if failed:
         for f in failed:
-            print(colorama.Fore.LIGHTYELLOW_EX + f['name'])
+            print_queue.put(colorama.Fore.LIGHTYELLOW_EX + f['name'])
     else:
-        print('无')
-    print(colorama.Fore.LIGHTYELLOW_EX + '------------------------')
-    print('成功 %d, 失败 %d\n' % (len(success), len(failed)))
+        print_queue.put('无')
+    print_queue.put(colorama.Fore.LIGHTYELLOW_EX + '------------------------')
+    print_queue.put('成功 %d, 失败 %d\n' % (len(success), len(failed)))
 
 
 def get_args():
@@ -415,18 +415,36 @@ def get_args():
             logging.error(e.msg)
             print(e.msg)
             print_help()
-            exit(1)
+            sys.exit(1)
+        if opts:
+            for opt in opts:
+                if opt[0] == '-h' or opt[0] == '--help':
+                    print_help()
+                    sys.exit(0)
+                if opt[0] == '-m' or opt[0] == '--mode':
+                    mode = opt[1]
+                    if mode not in ['batch', 'single']:
+                        print(colorama.Fore.LIGHTRED_EX + '错误: 模式错误: {}, 只能为 "batch" 或 "single"'.format(mode))
+                        sys.exit(1)
+                if opt[0] == '-r' or opt[0] == '--reload':
+                    reload_course = True
+                if opt[0] == '-u' or opt[0] == '--username':
+                    usn = opt[1]
+                if opt[0] == '-p' or opt[0] == '--password':
+                    pwd = opt[1]
+                if opt[0] == '-n' or opt[0] == '--no-wait':
+                    wait = True
     if not usn or not pwd:
         if not usn:
             print(colorama.Fore.LIGHTRED_EX + '错误: 学号为空')
         if not pwd:
             print(colorama.Fore.LIGHTRED_EX + '错误: 密码为空')
         logging.critical('No username or no password provided, exiting')
-        exit(1)
+        sys.exit(1)
     if mode != 'single' and id_list is None:
         print(colorama.Fore.LIGHTRED_EX + '错误: 批量选课模式下必须输入课程ID列表')
         logging.critical('No course id list provided in batch mode')
-        exit(1)
+        sys.exit(1)
     return mode, reload_course, usn, pwd, id_list, wait
 
 
@@ -439,7 +457,7 @@ def print_help():
     南方科技大学自动选课
     参数列表:
     hm:ru:p:n
-    -h --help                   显示帮助
+    -h --help                   显示帮助并退出
     -m --mode {batch|single}    模式 (批量/单个交互)
     -r --reload                 是否重新加载课程数据
     -u --username <username>    用户名
@@ -502,6 +520,9 @@ def main():
 
     create_id_name_map(data)
     start_new_thread(thread_print, ())
+
+    # print below should use the print queue!!!
+
     for url in ENROLL_URLS:
         session.get(url)
 
@@ -510,26 +531,27 @@ def main():
         for course_id in id_list:
             if course_id not in course_name_map:
                 logging.error('ID {} not found in data, skip'.format(course_id))
-                print(colorama.Fore.LIGHTRED_EX + '错误: 课程ID号{}无数据, 将从队列中删除. 使用交互式选课以忽略此错误'.format(course_id))
+                print_queue.put(colorama.Fore.LIGHTRED_EX + '错误: 课程ID号{}无数据, 将从队列中删除. 使用交互式选课以忽略此错误'.format(course_id))
                 delete_ids.append(course_id)
         for id in delete_ids:
             id_list.remove(id)
-        print('\n选课课程:')
+        print_queue.put('\n选课课程:')
         for course_id in id_list:
-            print(colorama.Fore.LIGHTCYAN_EX +
-                  '{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
+            print_queue.put(colorama.Fore.LIGHTCYAN_EX +
+                            '{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
         if not id_list:
-            print('无可选课程, 退出')
-            exit(1)
+            print_queue.put('无可选课程, 退出')
+            sys.exit(1)
 
-        print()
+        print_queue.put('')
         for item in id_list:
             if item not in course_name_map.keys():
-                print(colorama.Fore.LIGHTRED_EX +
-                      '警告: 课程 id 为 {} 的课程无数据. 尝试更新课程列表或检查课程 id 输入'.format(item))
+                print_queue.put(colorama.Fore.LIGHTRED_EX +
+                                '警告: 课程 id 为 {} 的课程无数据. 尝试更新课程列表或检查课程 id 输入'.format(item))
 
+        while not print_queue.empty(): pass
         input('按 Enter 键继续\n')
-        print('开始批量自动选课......\n')
+        print_queue.put('开始批量自动选课......\n')
         start_time = time.time() * 1e3
         success, failed = do_batch_enroll(id_list)
         logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
@@ -546,6 +568,7 @@ def main():
     logging.info('Done, %d success, %d failed' % (len(success), len(failed)))
 
     while len(failed) != 0:
+        while not print_queue.empty(): pass
         retry = input('是否尝试重选失败课程? (Y/N)\n>')
         if not retry.lower() == 'y':
             break
@@ -554,8 +577,6 @@ def main():
         start_time = time.time() * 1e3
         success, failed = do_batch_enroll(failed_ids)
         logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
-        time.sleep(0.1)
-        # here I don't know why but if you don't add this, the output will become a mess. tried flush(), not working
         print_result_list(success, failed)
 
 
