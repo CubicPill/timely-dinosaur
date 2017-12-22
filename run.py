@@ -41,7 +41,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 logging.getLogger('requests').setLevel(logging.ERROR)
 q = Queue()
 print_queue = Queue()
-MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/main.jsp'
+MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/xsMain.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
 VERSION = 'v1.2.1'
 
@@ -476,15 +476,20 @@ def main():
         print('读取登陆信息......', end='')
         global session
         with open('session.pickle', 'rb') as f:
-            session = pickle.load(f)
-            logging.debug('Session restored from pickle file')
-        if validate_session():
-            logging.debug('Pickle session valid')
-            need_login = False
-            print(colorama.Fore.LIGHTGREEN_EX + '登录状态已恢复\n')
-        else:
-            print(colorama.Fore.LIGHTYELLOW_EX + '登录信息已过期\n')
-            logging.debug('Pickle session expired, try login')
+            try:
+                session = pickle.load(f)
+            except:
+                logging.error('Corrupted pickle file')
+                print(colorama.Fore.LIGHTRED_EX + '文件损坏!')
+            else:
+                logging.debug('Session restored from pickle file')
+                if validate_session():
+                    logging.debug('Pickle session valid')
+                    need_login = False
+                    print(colorama.Fore.LIGHTGREEN_EX + '登录状态已恢复\n')
+                else:
+                    print(colorama.Fore.LIGHTYELLOW_EX + '登录信息已过期\n')
+                    logging.debug('Pickle session expired, try login')
     else:
         logging.debug('No saved session found')
     if need_login:
@@ -570,6 +575,8 @@ def main():
     while len(failed) != 0:
         while not print_queue.empty(): pass
         retry = input('是否尝试重选失败课程? (Y/N)\n>')
+        while retry.lower() not in ['y', 'n']:
+            retry = input('是否尝试重选失败课程? (Y/N)\n>')
         if not retry.lower() == 'y':
             break
         logging.info('Retry enrolling')
