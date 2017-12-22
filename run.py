@@ -406,19 +406,28 @@ def get_args():
     pwd = config.get('password')
     id_list = config.get('course_id')
     wait = config.get('wait') if 'wait' in config else True
-    re_login = config.get('login') if 'login' in config else False
 
     if sys.argv[1:]:
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "hm:ru:p:nl",
-                                       ['help', 'mode=', 'reload', 'username=', 'password=', 'no-wait', 'login'])
+            opts, args = getopt.getopt(sys.argv[1:], "hm:ru:p:n",
+                                       ['help', 'mode=', 'reload', 'username=', 'password=', 'no-wait'])
         except getopt.GetoptError as e:
             logging.error(e.msg)
             print(e.msg)
             print_help()
             exit(1)
-
-    return mode, reload_course, usn, pwd, id_list, wait, re_login
+    if not usn or not pwd:
+        if not usn:
+            print(colorama.Fore.LIGHTRED_EX + '错误: 学号为空')
+        if not pwd:
+            print(colorama.Fore.LIGHTRED_EX + '错误: 密码为空')
+        logging.critical('No username or no password provided, exiting')
+        exit(1)
+    if mode != 'single' and id_list is None:
+        print(colorama.Fore.LIGHTRED_EX + '错误: 批量选课模式下必须输入课程ID列表')
+        logging.critical('No course id list provided in batch mode')
+        exit(1)
+    return mode, reload_course, usn, pwd, id_list, wait
 
 
 def print_help():
@@ -426,36 +435,44 @@ def print_help():
     print help
     :return:
     """
-    pass
+    print('''
+    南方科技大学自动选课
+    参数列表:
+    hm:ru:p:n
+    -h --help                   显示帮助
+    -m --mode {batch|single}    模式 (批量/单个交互)
+    -r --reload                 是否重新加载课程数据
+    -u --username <username>    用户名
+    -p --password <password>    密码
+    -n --no-wait                是否等待教务系统开放
+    ''')
 
 
 def main():
     colorama.init(autoreset=True)
     print('Timely Dinosaur ' + VERSION + ', Author: CubicPill')
-    config = load_config_from_file()
     need_login = True
-    mode, reload_course, usn, pwd, id_list, wait, re_login = get_args()
+    mode, reload_course, usn, pwd, id_list, wait = get_args()
 
-    if not re_login:
-        if 'session.pickle' in os.listdir('./'):
-            print('读取登陆信息......', end='')
-            global session
-            with open('session.pickle', 'rb') as f:
-                session = pickle.load(f)
-                logging.debug('Session restored from pickle file')
-            if validate_session():
-                logging.debug('Pickle session valid')
-                need_login = False
-                print(colorama.Fore.LIGHTGREEN_EX + '登录状态已恢复\n')
-            else:
-                print(colorama.Fore.LIGHTYELLOW_EX + '登录信息已过期\n')
-                logging.debug('Pickle session expired, try login')
+    if 'session.pickle' in os.listdir('./'):
+        print('读取登陆信息......', end='')
+        global session
+        with open('session.pickle', 'rb') as f:
+            session = pickle.load(f)
+            logging.debug('Session restored from pickle file')
+        if validate_session():
+            logging.debug('Pickle session valid')
+            need_login = False
+            print(colorama.Fore.LIGHTGREEN_EX + '登录状态已恢复\n')
         else:
-            logging.debug('No saved session found')
+            print(colorama.Fore.LIGHTYELLOW_EX + '登录信息已过期\n')
+            logging.debug('Pickle session expired, try login')
+    else:
+        logging.debug('No saved session found')
     if need_login:
         print('登录教务系统......', end='')
         start_time = time.time() * 1e3
-        if not do_login(config['username'], config['password']):
+        if not do_login(usn, pwd):
             logging.critical('CAS login failed')
             sys.exit(1)
         logging.info('Login completed. Time: {}ms'.format(round(time.time() * 1e3 - start_time), 2))
@@ -490,23 +507,23 @@ def main():
 
     if mode == 'batch':  # batch mode
         delete_ids = list()
-        for course_id in config['course_id']:
+        for course_id in id_list:
             if course_id not in course_name_map:
                 logging.error('ID {} not found in data, skip'.format(course_id))
                 print(colorama.Fore.LIGHTRED_EX + '错误: 课程ID号{}无数据, 将从队列中删除. 使用交互式选课以忽略此错误'.format(course_id))
                 delete_ids.append(course_id)
         for id in delete_ids:
-            config['course_id'].remove(id)
+            id_list.remove(id)
         print('\n选课课程:')
-        for course_id in config['course_id']:
+        for course_id in id_list:
             print(colorama.Fore.LIGHTCYAN_EX +
                   '{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
-        if not config['course_id']:
+        if not id_list:
             print('无可选课程, 退出')
             exit(1)
 
         print()
-        for item in config['course_id']:
+        for item in id_list:
             if item not in course_name_map.keys():
                 print(colorama.Fore.LIGHTRED_EX +
                       '警告: 课程 id 为 {} 的课程无数据. 尝试更新课程列表或检查课程 id 输入'.format(item))
@@ -514,7 +531,7 @@ def main():
         input('按 Enter 键继续\n')
         print('开始批量自动选课......\n')
         start_time = time.time() * 1e3
-        success, failed = do_batch_enroll(config['course_id'])
+        success, failed = do_batch_enroll(id_list)
         logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
     elif mode == 'single':  # interactive mode
         success, failed = do_interactive_enroll()

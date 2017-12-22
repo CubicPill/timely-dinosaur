@@ -10,6 +10,7 @@ tzdlb:tzdlb
 pgtj:pgtj
 #先修课程???(机械设计基础 并且 控制工程基础)
 jx02id:jx02id
+#Just another course identifier
 sfkfxk:sfkfxk
 kxh:kxh
 bjbkx:bjbkx
@@ -36,7 +37,7 @@ xf:credit
 fzmc:fzmc
 #分组名称???
 dwmc:department
-#系部
+#单位名称(系部)
 ctsm:course_conflicts
 #时间冲突
 szkcflmc:szkcflmc

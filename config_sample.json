@@ -7,6 +7,5 @@
   ],
   "mode": "batch",
   "reload": true,
-  "wait": true,
-  "login": false
+  "wait": true
 }
