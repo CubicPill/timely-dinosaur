@@ -13,6 +13,7 @@ import getopt
 import colorama
 import requests
 from bs4 import BeautifulSoup
+from requests.structures import CaseInsensitiveDict
 
 try:
     os.chdir(os.path.dirname(sys.argv[0]))  # change work directory
@@ -66,6 +67,12 @@ def thread_print():
 
 
 def do_login(username, password):
+    session.headers = CaseInsensitiveDict({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
+        'Accept-Encoding': ', '.join(('gzip', 'deflate')),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Connection': 'keep-alive',
+    })
     req = session.get(MAIN_URL)
     soup = BeautifulSoup(req.content, 'html5lib')
     post_url = 'https://cas.sustc.edu.cn/cas/login?service=http%3A%2F%2Fjwxt.sustc.edu.cn%2Fjsxsd%2F'
@@ -91,6 +98,14 @@ def do_login(username, password):
         with open('session.pickle', 'wb') as f:
             pickle.dump(session, f)
         return True
+
+
+def logout_session():
+    session.get('http://jwxt.sustc.edu.cn/jsxsd/xk/LoginToXk?method=exit')
+    if os.path.isfile('session.pickle'):
+        os.remove('session.pickle')
+        logging.info('Pickle removed')
+    logging.info('Logged out')
 
 
 def load_config_from_file():
@@ -472,7 +487,7 @@ def main():
     need_login = True
     mode, reload_course, usn, pwd, id_list, wait = get_args()
 
-    if 'session.pickle' in os.listdir('./'):
+    if os.path.isfile('session.pickle'):
         print('读取登陆信息......', end='')
         global session
         with open('session.pickle', 'rb') as f:
@@ -563,7 +578,6 @@ def main():
     elif mode == 'single':  # interactive mode
         success, failed = do_interactive_enroll()
     else:
-
         sys.exit(1)
 
     print_queue.put(colorama.Fore.LIGHTBLUE_EX + '\n自动选课完成!\n')
@@ -571,13 +585,10 @@ def main():
     print_result_list(success, failed)
 
     logging.info('Done, %d success, %d failed' % (len(success), len(failed)))
-
     while len(failed) != 0:
         while not print_queue.empty(): pass
-        retry = input('是否尝试重选失败课程? (Y/N)\n>')
-        while retry.lower() not in ['y', 'n']:
-            retry = input('是否尝试重选失败课程? (Y/N)\n>')
-        if not retry.lower() == 'y':
+        retry = input('是否尝试重选失败课程? (Y/n)\n>')
+        if retry.lower() == 'n':
             break
         logging.info('Retry enrolling')
         failed_ids = [item['course_id'] for item in failed]
@@ -585,6 +596,11 @@ def main():
         success, failed = do_batch_enroll(failed_ids)
         logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
         print_result_list(success, failed)
+    while not print_queue.empty(): pass
+    logout = input('是否退出登陆? (y/N)\n>')
+    if logout.lower() == 'y':
+        logout_session()
+        print('已退出登陆')
 
 
 if __name__ == '__main__':
