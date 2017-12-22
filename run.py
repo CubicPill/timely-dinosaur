@@ -15,11 +15,6 @@ import requests
 from bs4 import BeautifulSoup
 from requests.structures import CaseInsensitiveDict
 
-try:
-    os.chdir(os.path.dirname(sys.argv[0]))  # change work directory
-except OSError:
-    pass
-
 ENROLL_URLS = [
     'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/bxxkOper?jx0404id={id}&xkzy=&trjf=',
     # 必修选课
@@ -35,16 +30,25 @@ ENROLL_URLS = [
     # 公选课
 ]
 TYPES_STR = ['必修', '选修', '本学期计划', '跨年级', '跨专业', '公共课']
-session = requests.session()
-course_name_map = dict()
-
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filename='logging.log')
-logging.getLogger('requests').setLevel(logging.ERROR)
-q = Queue()
-print_queue = Queue()
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/xsMain.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
-VERSION = 'v1.2.1'
+VERSION = 'v1.2.2'
+
+session = requests.session()
+course_name_map = dict()
+q = Queue()
+print_queue = Queue()
+
+try:
+    os.chdir(os.path.dirname(sys.argv[0]))  # change work directory
+except OSError:
+    pass
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s %(message)s',
+                    filename='logging.log')
+logging.getLogger('requests').setLevel(logging.WARNING)
+logging.getLogger('urllib3.connectionpool').setLevel(logging.WARNING)
+logging.getLogger('chardet.charsetprober').setLevel(logging.WARNING)
 
 
 def validate_session():
@@ -88,8 +92,6 @@ def do_login(username, password):
     response = session.post(post_url, data=login_data, timeout=20)
     soup_resp = BeautifulSoup(response.content, 'html5lib')
     error = soup_resp.find('div', {'class': 'errors', 'id': 'msg'})
-    with open('test.html', 'wb') as f:
-        f.write(response.content)
     if error:
         print(colorama.Fore.LIGHTRED_EX + '登录失败! 错误信息: ' + error.text.replace('.', '. ') + '\n')
         return False
@@ -224,8 +226,8 @@ def do_interactive_enroll():
                 continue
             course_id, __type = in_text.split(' ')
             if not re.match('\d{15}$', course_id):
-                print(colorama.Fore.LIGHTYELLOW_EX + '输入格式不匹配. 是否继续?(Y/N)')
-                cont = input('>')
+                print(colorama.Fore.LIGHTYELLOW_EX + '输入格式不匹配. 是否继续?(Y/N) ', end='')
+                cont = input()
                 if cont.lower() == 'y':
                     pass
                 else:
@@ -587,7 +589,7 @@ def main():
     logging.info('Done, %d success, %d failed' % (len(success), len(failed)))
     while len(failed) != 0:
         while not print_queue.empty(): pass
-        retry = input('是否尝试重选失败课程? (Y/n)\n>')
+        retry = input('是否尝试重选失败课程? (Y/n) ')
         if retry.lower() == 'n':
             break
         logging.info('Retry enrolling')
@@ -597,7 +599,7 @@ def main():
         logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
         print_result_list(success, failed)
     while not print_queue.empty(): pass
-    logout = input('是否退出登陆? (y/N)\n>')
+    logout = input('是否退出登陆? (y/N) ')
     if logout.lower() == 'y':
         logout_session()
         print('已退出登陆')
