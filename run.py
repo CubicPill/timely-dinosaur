@@ -66,19 +66,23 @@ def thread_print():
 
 
 def do_login(username, password):
-    soup = BeautifulSoup(session.get(MAIN_URL).content, 'html5lib')
-    form = soup.find('form', id='fm1')
-    post_url = LOGIN_SERVER_ADDR + form['action']
+    req = session.get(MAIN_URL)
+    soup = BeautifulSoup(req.content, 'html5lib')
+    post_url = 'https://cas.sustc.edu.cn/cas/login?service=http%3A%2F%2Fjwxt.sustc.edu.cn%2Fjsxsd%2F'
     login_data = {}
-    for element in soup.find('form').find_all('input'):
-        if element.has_attr('value'):
-            login_data[element['name']] = element['value']
+    for element in soup.find('form', {'id': 'fm1'}).find_all('input'):
+        if element.has_attr('name'):
+            value = ''
+            if element.has_attr('value'):
+                value = element['value']
+            login_data[element['name']] = value
     login_data['username'] = username
     login_data['password'] = password
     response = session.post(post_url, data=login_data, timeout=20)
     soup_resp = BeautifulSoup(response.content, 'html5lib')
     error = soup_resp.find('div', {'class': 'errors', 'id': 'msg'})
-
+    with open('test.html', 'wb') as f:
+        f.write(response.content)
     if error:
         print(colorama.Fore.LIGHTRED_EX + '登录失败! 错误信息: ' + error.text.replace('.', '. ') + '\n')
         return False
@@ -96,6 +100,7 @@ def load_config_from_file():
         sys.exit(1)
     with open('config.json') as f:
         config = json.load(f)
+    config['course_id'] = [str(i) for i in config['course_id']]
     logging.debug('Config loaded!')
     return config
 
@@ -484,15 +489,22 @@ def main():
         session.get(url)
 
     if mode == 'batch':  # batch mode
+        delete_ids = list()
         for course_id in config['course_id']:
-            if course_id not in course_name_map.keys():
+            if course_id not in course_name_map:
                 logging.error('ID {} not found in data, skip'.format(course_id))
                 print(colorama.Fore.LIGHTRED_EX + '错误: 课程ID号{}无数据, 将从队列中删除. 使用交互式选课以忽略此错误'.format(course_id))
-                config['course_id'].remove(course_id)
+                delete_ids.append(course_id)
+        for id in delete_ids:
+            config['course_id'].remove(id)
         print('\n选课课程:')
         for course_id in config['course_id']:
             print(colorama.Fore.LIGHTCYAN_EX +
                   '{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
+        if not config['course_id']:
+            print('无可选课程, 退出')
+            exit(1)
+
         print()
         for item in config['course_id']:
             if item not in course_name_map.keys():
