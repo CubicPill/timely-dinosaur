@@ -360,8 +360,9 @@ def fetch_course_data():
            + cross_dept.get('aaData') + common.get('aaData')
     logging.debug('All course data fetching done. {} records in total.'.format(len(data)))
 
-    with open('course_data.json', 'w') as f:
-        json.dump(data, f, indent=3)
+    with open('course_data.json', 'w', encoding='utf8') as f:
+        d = json.dumps(data, indent=3, ensure_ascii=False).encode().decode('utf-8')
+        f.write(d)
         logging.debug('Course data written to file')
 
     return data
