@@ -525,12 +525,12 @@ def main():
             session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xsxk_index?jx0502zbid=' + zbid)  # complete login
             break
         else:
-            print('选课入口尚未开放, 5 秒后重试.')
-            logging.warning('Entry not found, try again in 5 seconds')
-            time.sleep(5)
+            print('选课入口尚未开放, 2 秒后重试.')
+            logging.warning('Entry not found, try again in 2 seconds')
+            time.sleep(2)
 
     if not reload_course and 'course_data.json' in os.listdir('./'):
-        with open('course_data.json') as f:
+        with open('course_data.json', encoding='utf8') as f:
             data = json.load(f)
             logging.debug('Existing course data loaded')
     else:
@@ -610,6 +610,9 @@ if __name__ == '__main__':
     logging.info('********start********')
     try:
         main()
+    except KeyboardInterrupt:
+        logging.info('KeyboardInterrupt, exiting')
+        print('已停止')
     except Exception:
         logging.warning('********ERROR OCCURRED********')
         logging.warning(traceback.format_exc())

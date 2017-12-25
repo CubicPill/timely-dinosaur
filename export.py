@@ -2,6 +2,11 @@ import csv
 import os
 import json
 
+ROWS = ['kch', 'kcmc', 'fzmc', 'dwmc', 'xnxqmc', 'pkrs', 'kctxmc', 'kcsxmc', 'tzdlb', 'pgtj', 'jx02id', 'sfkfxk', 'kxh',
+        'bjbkx', 'sftk', 'xbyq', 'kcxzm', 'xkrs', 'kkxnxq', 'zxs', 'xnxq01id', 'jx0404id', 'xf', 'ctsm', 'szkcflmc',
+        'xbyqmc', 'sksj', 'skls', 'ksfs', 'kcxzmc', 'zybkx', 'isxwkc', 'zyfx', 'syrs', 'xqid', 'skdd', 'szkcfl',
+        'kkapList', 'kcsx', 'kctxid', 'kkdw', 'khfs', '__type']
+
 
 def load_key_translation(path):
     translation = dict()
@@ -15,7 +20,6 @@ def load_key_translation(path):
                         translation[ori] = chn
                     except ValueError:
                         pass
-    print(translation)
     return translation
 
 
@@ -29,13 +33,24 @@ def main():
         print('ERROR: No course data available')
         exit(1)
     if data:
-        rows = [k for k in data[0].keys()]
         translation = load_key_translation('key_translations')
-        f = open('export.csv', 'w', encoding='utf8')
-        csv_writer = csv.writer(f)
-        csv_writer.writerow([r or translation.get(r) for r in rows])
+        f = open('export.csv', 'w', encoding='utf_8_sig', newline='')  # UTF-8 with BOM
+        csv_writer = csv.writer(f, dialect='excel')
+        csv_writer.writerow([translation.get(r) for r in ROWS])
+        write_rows = list()
         for course_data in data:
-            csv_writer.writerow(course_data.values())
+            row = [None for i in range(len(ROWS))]
+            for _k, _v in course_data.items():
+                if type(_v)==str:
+                    _v=_v.replace('<br>',' ')
+                row[ROWS.index(_k)] = _v
+            write_rows.append(row)
+        write_rows.sort(key=lambda r: r[0])
+        csv_writer.writerows(write_rows)
+        f.close()
+        print('Done!')
+    else:
+        print('No data to export')
 
 
 if __name__ == '__main__':
