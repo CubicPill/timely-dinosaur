@@ -41,8 +41,8 @@ def main():
         for course_data in data:
             row = [None for i in range(len(ROWS))]
             for _k, _v in course_data.items():
-                if type(_v)==str:
-                    _v=_v.replace('<br>',' ')
+                if type(_v) == str:
+                    _v = _v.replace('<br>', ' ')
                 row[ROWS.index(_k)] = _v
             write_rows.append(row)
         write_rows.sort(key=lambda r: r[0])

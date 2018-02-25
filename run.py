@@ -386,7 +386,7 @@ def create_id_name_map(data):
         course_name_map[course['jx0404id']]['cid'] = course['kch']
 
     logging.debug('ID to name mapping established')
-    with open('./courses.txt', 'w') as f:
+    with open('./courses.txt', 'w',encoding='utf-8') as f:
         list_arr = list()
         for key, value in course_name_map.items():
             list_arr.append([value['cid'].replace(' ', ''), TYPES_STR[value['type']], value['name']])
