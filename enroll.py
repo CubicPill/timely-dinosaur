@@ -448,6 +448,7 @@ def main():
         logging.info('Login completed. Time: {}ms'.format(round(time.time() * 1e3 - start_time), 2))
         dump_session_pickle()
         logging.debug('Session pickle dumped')
+    global session
     session = get_session()
     while True:
         temp = session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xklc_list?Ves632DSdyV=NEW_XSD_PYGL',

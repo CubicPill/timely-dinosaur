@@ -44,7 +44,7 @@ def do_login(username, password) -> dict:
     login_data['password'] = password
     response = _global_session.post(post_url, data=login_data, timeout=20)
     soup_resp = BeautifulSoup(response.content, 'html5lib')
-    error = soup_resp.find('div', {'class': 'alert'})
+    error = soup_resp.find('div', {'class': 'alert-danger'})
     if error:
         return {'ok': False, 'error': ' '.join(error.text.replace('.', '. ').split())}
     else:
