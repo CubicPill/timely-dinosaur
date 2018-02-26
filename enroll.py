@@ -383,7 +383,7 @@ def get_args():
                 if opt[0] == '-p' or opt[0] == '--password':
                     pwd = opt[1]
                 if opt[0] == '-n' or opt[0] == '--no-wait':
-                    wait = True
+                    wait = False
     if not usn or not pwd:
         if not usn:
             print(colorama.Fore.LIGHTRED_EX + '错误: 学号为空')
@@ -462,6 +462,9 @@ def main():
             session.get('http://jwxt.sustc.edu.cn/jsxsd/xsxk/xsxk_index?jx0502zbid=' + zbid)  # complete login
             break
         else:
+            if not wait:
+                print('选课入口尚未开放')
+                sys.exit(0)
             print('选课入口尚未开放, 2 秒后重试.')
             logging.warning('Entry not found, try again in 2 seconds')
             time.sleep(2)
