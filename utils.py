@@ -10,7 +10,9 @@ LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
 _global_session = requests.session()
 
 
-def validate_session(_session):
+def validate_session(_session=None) -> bool:
+    if not _session:
+        _session = _global_session
     try:
         if _session.get(MAIN_URL, allow_redirects=False, timeout=10).status_code == 200:
             return True
@@ -76,10 +78,13 @@ def load_session_pickle() -> str:
 
 def logout_session():
     _global_session.get('http://jwxt.sustc.edu.cn/jsxsd/xk/LoginToXk?method=exit')
+
+
+def remove_session_pickle():
     if os.path.isfile('session.pickle'):
         os.remove('session.pickle')
-        logging.info('Pickle removed')
-    logging.info('Logged out')
+        return True
+    return False
 
 
 ENROLL_URLS = [

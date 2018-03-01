@@ -13,7 +13,7 @@ import getopt
 import colorama
 import requests
 from utils import do_login, logout_session, ENROLL_URLS, TYPES_STR, load_session_pickle, get_session, \
-    dump_session_pickle
+    dump_session_pickle, remove_session_pickle
 
 session: requests.session = get_session()
 course_name_map = dict()
@@ -544,6 +544,9 @@ def main():
     logout = input('是否退出登陆? (y/N) ')
     if logout.lower() == 'y':
         logout_session()
+        if remove_session_pickle():
+            logging.info('Pickle removed')
+        logging.info('Logged out')
         print('已退出登陆')
 
 
