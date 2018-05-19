@@ -1,0 +1,123 @@
+.sidenav {
+    height: 100%; /* Full-height: remove this if you want "auto" height */
+    width: 20%; /* Set the width of the sidebar */
+    position: fixed; /* Fixed Sidebar (stay in place on scroll) */
+    z-index: 1; /* Stay on top */
+    top: 0; /* Stay at the top */
+    left: 0;
+    background-color: darkgray; /* Black */
+    overflow-x: hidden; /* Disable horizontal scroll */
+    padding-top: 20px;
+}
+
+.sidenav a {
+    padding: 6px 8px 6px 16px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #818181;
+    display: block;
+}
+
+.sidenav a:hover {
+    color: #f1f1f1;
+}
+
+.search-container {
+    padding-left: 10%;
+}
+
+.search-container input[type=text] {
+    padding: 6px;
+    margin-top: 8px;
+    font-size: 17px;
+    border: none;
+}
+
+.search-container button {
+    padding: 6px 10px;
+    margin-top: 8px;
+    margin-right: 16px;
+    background: #ddd;
+    font-size: 17px;
+    border: none;
+    cursor: pointer;
+}
+
+.search-container button:hover {
+    background: #ccc;
+}
+
+.main {
+    margin-left: 20%; /* Same as the width of the sidebar */
+    padding: 0px 10px;
+}
+
+#search-container {
+    width: 20%;
+    height: 100%;
+
+}
+
+#search-icon {
+    width: 30px;
+    height: 30px;
+}
+
+#search-bar {
+    text-align: center;
+    display: table-cell;
+    vertical-align: middle;
+    width: 100%;
+    height: 20%;
+}
+
+#search-bar input[type=text] {
+    float: right;
+    padding: 6px;
+    border: none;
+    margin-top: 8px;
+    margin-right: 16px;
+    font-size: 17px;
+}
+
+#tbl-main {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 80%;
+}
+
+.tr-sep {
+    height: 1em;
+}
+
+tr {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 20px;
+    padding: 10px 5px;
+    overflow: hidden;
+    word-break: normal;
+    border: 1px solid black;
+    height: 20%;
+}
+
+td {
+
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 20px;
+    padding: 10px 5px;
+    overflow: hidden;
+    word-break: normal;
+    border: 1px solid black;
+    width: 10%;
+
+}
+
+th {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 22px;
+    font-weight: normal;
+    padding: 10px 5px;
+    overflow: hidden;
+    word-break: normal;
+    border: 1px solid black;
+}
