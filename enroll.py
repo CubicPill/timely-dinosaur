@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import pickle
 import re
 import sys
 import time
@@ -566,3 +565,7 @@ def init():
         sys.exit(1)
     input('\n按 Enter 键退出')
     logging.info('********exit********')
+
+
+if __name__ == '__main__':
+    init()
