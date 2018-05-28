@@ -25,7 +25,7 @@ except OSError:
     pass
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s %(message)s',
-                    filename='logging.log')
+                    filename='td.log')
 logging.getLogger('requests').setLevel(logging.WARNING)
 logging.getLogger('urllib3.connectionpool').setLevel(logging.WARNING)
 logging.getLogger('chardet.charsetprober').setLevel(logging.WARNING)

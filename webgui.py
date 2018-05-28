@@ -1,4 +1,13 @@
 from flask import Flask, jsonify, request
+import json
+import os
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s %(message)s',
+                    filename='td_web.log')
+logging.getLogger('requests').setLevel(logging.WARNING)
+logging.getLogger('urllib3.connectionpool').setLevel(logging.WARNING)
+logging.getLogger('chardet.charsetprober').setLevel(logging.WARNING)
 
 app = Flask(__name__, static_path='')
 
@@ -17,12 +26,20 @@ def search():
     return jsonify({'ok': True})
 
 
+@app.route('/save', methods=['POST'])
 def save_result():
-    pass
+    json_data = request.get_json()
+    with open('web_saved.json', 'w') as f:
+        json.dump(json_data, f)
+    return jsonify({'ok': True})
 
 
-def read_current():
-    pass
+@app.route('/load', methods=['GET'])
+def read_saved_result():
+    if not os.path.isfile('web_saved.json'):
+        return jsonify({})
+    else:
+        return app.send_static_file('web_saved.json')
 
 
 def main():
