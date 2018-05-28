@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 import json
 import os
 import logging
+import sys
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s %(message)s',
                     filename='td_web.log')
@@ -40,6 +41,11 @@ def read_saved_result():
         return jsonify({})
     else:
         return app.send_static_file('web_saved.json')
+
+
+@app.route('/exit', methods=['POST'])
+def exit_program():
+    sys.exit(0)
 
 
 def main():

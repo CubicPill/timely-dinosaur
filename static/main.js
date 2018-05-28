@@ -21,8 +21,16 @@ function initPage() {
         input.val("");
     });
     loadSavedResults();
+
 }
 
+function saveResult() {
+    console.log('Save result');
+
+}
+function table() {
+    
+}
 function onSearchSuccess(data) {
     if (!data.ok) {
         console.error('API return: Not OK');
