@@ -24,7 +24,7 @@ try:
 except OSError:
     pass
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s %(message)s',
+logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(asctime)s %(name)s %(threadName)s %(message)s',
                     filename='td.log')
 logging.getLogger('requests').setLevel(logging.WARNING)
 logging.getLogger('urllib3.connectionpool').setLevel(logging.WARNING)
@@ -315,6 +315,7 @@ def create_id_name_map(data):
             course_name_map[course['jx0404id']]['name'] = course['kcmc']
         course_name_map[course['jx0404id']]['type'] = course['__type']
         course_name_map[course['jx0404id']]['cid'] = course['kch']
+        course_name_map[course['jx0404id']]['credit'] = course['xf']
 
     logging.debug('ID to name mapping established')
     with open('./courses.txt', 'w', encoding='utf-8') as f:
@@ -347,7 +348,7 @@ def print_result_list(success, failed):
 
 
 def get_args():
-    # priority: command line args, config file, default settings
+    # priority: command line args > config file > default settings
     config = load_config_from_file()
     mode = config.get('mode') if 'mode' in config else 'batch'
     reload_course = config.get('reload') if 'reload' in config else True
@@ -394,7 +395,14 @@ def get_args():
         print(colorama.Fore.LIGHTRED_EX + '错误: 批量选课模式下必须输入课程ID列表')
         logging.critical('No course id list provided in batch mode')
         sys.exit(1)
-    return mode, reload_course, usn, pwd, id_list, wait
+    return {
+        'mode': mode,
+        'reload_course': reload_course,
+        'usn': usn,
+        'pwd': pwd,
+        'id_list': id_list,
+        'wait': wait
+    }
 
 
 def print_help():
@@ -415,10 +423,9 @@ def print_help():
     ''')
 
 
-def main():
+def main(mode, reload_course, usn, pwd, id_list, wait):
     colorama.init(autoreset=True)
     need_login = True
-    mode, reload_course, usn, pwd, id_list, wait = get_args()
 
     if os.path.isfile('session.pickle'):
         print('读取登陆信息......', end='')
@@ -502,10 +509,11 @@ def main():
         for course_id in id_list:
             print_queue.put(colorama.Fore.LIGHTCYAN_EX +
                             '{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
+
         if not id_list:
             print_queue.put('无可选课程, 退出')
             sys.exit(1)
-
+        print_queue.put('总学分: {}'.format(sum([course_name_map[cid]['credit'] for cid in id_list])))
         print_queue.put('')
         for item in id_list:
             if item not in course_name_map.keys():
@@ -552,7 +560,7 @@ def main():
 def init():
     logging.info('********start********')
     try:
-        main()
+        main(**get_args())
     except KeyboardInterrupt:
         logging.info('KeyboardInterrupt, exiting')
         print('已停止')

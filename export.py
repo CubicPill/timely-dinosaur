@@ -39,7 +39,7 @@ def main():
         csv_writer.writerow([translation.get(r) for r in ROWS])
         write_rows = list()
         for course_data in data:
-            row = [None for i in range(len(ROWS))]
+            row = [None]*len(ROWS)
             for _k, _v in course_data.items():
                 if type(_v) == str:
                     _v = _v.replace('<br>', ' ')
