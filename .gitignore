@@ -3,3 +3,5 @@ td.log
 td_web.log
 session.pickle
 web_saved.json
+course_data.json
+courses.txt
