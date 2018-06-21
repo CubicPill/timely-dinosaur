@@ -27,6 +27,11 @@ def search():
     return jsonify({'ok': True})
 
 
+@app.route('/detail/<course_id>', methods=['GET'])
+def get_course_detail(course_id):
+    return jsonify({'ok': True})
+
+
 @app.route('/save', methods=['POST'])
 def save_result():
     json_data = request.get_json()

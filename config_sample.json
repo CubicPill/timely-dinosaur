@@ -7,5 +7,6 @@
   ],
   "mode": "batch",
   "reload": true,
-  "wait": true
+  "wait": true,
+  "ignore_nf": false
 }

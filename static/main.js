@@ -28,9 +28,11 @@ function saveResult() {
     console.log('Save result');
 
 }
-function table() {
-    
+
+function table(row, column, content) {
+
 }
+
 function onSearchSuccess(data) {
     if (!data.ok) {
         console.error('API return: Not OK');
@@ -52,5 +54,9 @@ function loadSavedResults() {
 }
 
 function showSearchResults(data) {
+
+}
+
+function isCourseOverlap() {
 
 }
