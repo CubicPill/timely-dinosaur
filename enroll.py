@@ -8,7 +8,6 @@ import traceback
 from _thread import start_new_thread
 from queue import Queue
 from threading import Thread
-import getopt
 import colorama
 import requests
 from utils import do_login, logout_session, ENROLL_URLS, TYPES_STR, load_session_pickle, get_session, \
@@ -134,53 +133,53 @@ def do_batch_enroll(course_ids):
     return success, failed
 
 
-def do_interactive_enroll():
-    """
-    interactive enroll. user will enter the course_ids manually
-    :return:
-    """
-    success = list()
-    failed = list()
-    print(colorama.Fore.LIGHTYELLOW_EX +
-          '警告: 交互式单项选课仅作为调试用途, 输入格式错误可能导致选课失败或程序崩溃, 请谨慎使用')
-    print('课程类型(0-5): ' + ' '.join(['必修', '选修', '本学期计划', '跨年级', '跨专业', '公共课']))
-
-    while True:
-        try:
-            in_text = input('输入课程ID和课程类型编号, 以空格分隔. 输入 "exit" 结束.\nID:')
-            if in_text == 'exit':
-                break
-            elif in_text == '':
-                continue
-            elif not re.match('.* \d$', in_text):
-                print(colorama.Fore.LIGHTRED_EX + '格式错误!')
-                continue
-            course_id, __type = in_text.split(' ')
-            if not re.match('\d{15}$', course_id):
-                print(colorama.Fore.LIGHTYELLOW_EX + '输入格式不匹配. 是否继续?(Y/N) ', end='')
-                cont = input()
-                if cont.lower() == 'y':
-                    pass
-                else:
-                    continue
-            __type = int(__type)
-            course_name_map[course_id] = dict()
-            course_name_map[course_id]['type'] = __type
-            course_name_map[course_id]['name'] = '<id: {}>'.format(course_id)
-            course_name_map[course_id]['cid'] = 'DUMMY001'
-
-            result = _enroll(course_id, __type, False)
-            if result['success']:
-                success.append(result)
-            else:
-                failed.append(result)
-        except Exception:
-            logging.error('Error occurred in interactive enrolling')
-            logging.error(traceback.format_exc())
-            print(colorama.Fore.LIGHTRED_EX + traceback.format_exc())
-        time.sleep(0.1)
-
-    return success, failed
+# def do_interactive_enroll():
+#     """
+#     interactive enroll. user will enter the course_ids manually
+#     :return:
+#     """
+#     success = list()
+#     failed = list()
+#     print(colorama.Fore.LIGHTYELLOW_EX +
+#           '警告: 交互式单项选课仅作为调试用途, 输入格式错误可能导致选课失败或程序崩溃, 请谨慎使用')
+#     print('课程类型(0-5): ' + ' '.join(['必修', '选修', '本学期计划', '跨年级', '跨专业', '公共课']))
+#
+#     while True:
+#         try:
+#             in_text = input('输入课程ID和课程类型编号, 以空格分隔. 输入 "exit" 结束.\nID:')
+#             if in_text == 'exit':
+#                 break
+#             elif in_text == '':
+#                 continue
+#             elif not re.match('.* \d$', in_text):
+#                 print(colorama.Fore.LIGHTRED_EX + '格式错误!')
+#                 continue
+#             course_id, __type = in_text.split(' ')
+#             if not re.match('\d{15}$', course_id):
+#                 print(colorama.Fore.LIGHTYELLOW_EX + '输入格式不匹配. 是否继续?(Y/N) ', end='')
+#                 cont = input()
+#                 if cont.lower() == 'y':
+#                     pass
+#                 else:
+#                     continue
+#             __type = int(__type)
+#             course_name_map[course_id] = dict()
+#             course_name_map[course_id]['type'] = __type
+#             course_name_map[course_id]['name'] = '<id: {}>'.format(course_id)
+#             course_name_map[course_id]['cid'] = 'DUMMY001'
+#
+#             result = _enroll(course_id, __type, False)
+#             if result['success']:
+#                 success.append(result)
+#             else:
+#                 failed.append(result)
+#         except Exception:
+#             logging.error('Error occurred in interactive enrolling')
+#             logging.error(traceback.format_exc())
+#             print(colorama.Fore.LIGHTRED_EX + traceback.format_exc())
+#         time.sleep(0.1)
+#
+#     return success, failed
 
 
 def fetch_course_data():
@@ -348,7 +347,7 @@ def print_result_list(success, failed):
 
 
 def get_args():
-    # priority: command line args > config file > default settings
+    # priority: config file > default settings
     config = load_config_from_file()
     mode = config.get('mode') if 'mode' in config else 'batch'
     reload_course = config.get('reload') if 'reload' in config else True
@@ -357,33 +356,33 @@ def get_args():
     id_list = config.get('course_id')
     wait = config.get('wait') if 'wait' in config else True
 
-    if sys.argv[1:]:
-        try:
-            opts, args = getopt.getopt(sys.argv[1:], "hm:ru:p:n",
-                                       ['help', 'mode=', 'reload', 'username=', 'password=', 'no-wait'])
-        except getopt.GetoptError as e:
-            logging.error(e.msg)
-            print(e.msg)
-            print_help()
-            sys.exit(1)
-        if opts:
-            for opt in opts:
-                if opt[0] == '-h' or opt[0] == '--help':
-                    print_help()
-                    sys.exit(0)
-                if opt[0] == '-m' or opt[0] == '--mode':
-                    mode = opt[1]
-                    if mode not in ['batch', 'single']:
-                        print(colorama.Fore.LIGHTRED_EX + '错误: 模式错误: {}, 只能为 "batch" 或 "single"'.format(mode))
-                        sys.exit(1)
-                if opt[0] == '-r' or opt[0] == '--reload':
-                    reload_course = True
-                if opt[0] == '-u' or opt[0] == '--username':
-                    usn = opt[1]
-                if opt[0] == '-p' or opt[0] == '--password':
-                    pwd = opt[1]
-                if opt[0] == '-n' or opt[0] == '--no-wait':
-                    wait = False
+    # if sys.argv[1:]:
+    #     try:
+    #         opts, args = getopt.getopt(sys.argv[1:], "hm:ru:p:n",
+    #                                    ['help', 'mode=', 'reload', 'username=', 'password=', 'no-wait'])
+    #     except getopt.GetoptError as e:
+    #         logging.error(e.msg)
+    #         print(e.msg)
+    #         print_help()
+    #         sys.exit(1)
+    #     if opts:
+    #         for opt in opts:
+    #             if opt[0] == '-h' or opt[0] == '--help':
+    #                 print_help()
+    #                 sys.exit(0)
+    #             if opt[0] == '-m' or opt[0] == '--mode':
+    #                 mode = opt[1]
+    #                 if mode not in ['batch', 'single']:
+    #                     print(colorama.Fore.LIGHTRED_EX + '错误: 模式错误: {}, 只能为 "batch" 或 "single"'.format(mode))
+    #                     sys.exit(1)
+    #             if opt[0] == '-r' or opt[0] == '--reload':
+    #                 reload_course = True
+    #             if opt[0] == '-u' or opt[0] == '--username':
+    #                 usn = opt[1]
+    #             if opt[0] == '-p' or opt[0] == '--password':
+    #                 pwd = opt[1]
+    #             if opt[0] == '-n' or opt[0] == '--no-wait':
+    #                 wait = False
     if not usn or not pwd:
         if not usn:
             print(colorama.Fore.LIGHTRED_EX + '错误: 学号为空')
@@ -391,12 +390,11 @@ def get_args():
             print(colorama.Fore.LIGHTRED_EX + '错误: 密码为空')
         logging.critical('No username or no password provided, exiting')
         sys.exit(1)
-    if mode != 'single' and id_list is None:
-        print(colorama.Fore.LIGHTRED_EX + '错误: 批量选课模式下必须输入课程ID列表')
+    if id_list is None:
+        print(colorama.Fore.LIGHTRED_EX + '错误: 必须输入课程ID列表')
         logging.critical('No course id list provided in batch mode')
         sys.exit(1)
     return {
-        'mode': mode,
         'reload_course': reload_course,
         'usn': usn,
         'pwd': pwd,
@@ -405,23 +403,23 @@ def get_args():
     }
 
 
-def print_help():
-    """
-    print help
-    :return:
-    """
-    print('''
-    南方科技大学自动选课
-    参数列表:
-    hm:ru:p:n
-    -h --help                   显示帮助并退出
-    -m --mode {batch|single}    模式 (批量/单个交互)
-    -r --reload                 是否重新加载课程数据
-    -u --username <username>    用户名
-    -p --password <password>    密码
-    -n --no-wait                是否等待教务系统开放
-    ''')
-
+# def print_help():
+#     """
+#     print help
+#     :return:
+#     """
+#     print('''
+#     南方科技大学自动选课
+#     参数列表:
+#     hm:ru:p:n
+#     -h --help                   显示帮助并退出
+#     -m --mode {batch|single}    模式 (批量/单个交互)
+#     -r --reload                 是否重新加载课程数据
+#     -u --username <username>    用户名
+#     -p --password <password>    密码
+#     -n --no-wait                是否等待教务系统开放
+#     ''')
+#
 
 def main(mode, reload_course, usn, pwd, id_list, wait):
     colorama.init(autoreset=True)
@@ -496,40 +494,35 @@ def main(mode, reload_course, usn, pwd, id_list, wait):
     for url in ENROLL_URLS:
         session.get(url)
 
-    if mode == 'batch':  # batch mode
-        delete_ids = list()
-        for course_id in id_list:
-            if course_id not in course_name_map:
-                logging.error('ID {} not found in data, skip'.format(course_id))
-                print_queue.put(colorama.Fore.LIGHTRED_EX + '错误: 课程ID号{}无数据, 将从队列中删除. 使用交互式选课以忽略此错误'.format(course_id))
-                delete_ids.append(course_id)
-        for id in delete_ids:
-            id_list.remove(id)
-        print_queue.put('\n选课课程:')
-        for course_id in id_list:
-            print_queue.put(colorama.Fore.LIGHTCYAN_EX +
-                            '{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
+    delete_ids = list()
+    for course_id in id_list:
+        if course_id not in course_name_map:
+            logging.error('ID {} not found in data, skip'.format(course_id))
+            print_queue.put(colorama.Fore.LIGHTRED_EX + '错误: 课程ID号{}无数据, 将从队列中删除. 使用交互式选课以忽略此错误'.format(course_id))
+            delete_ids.append(course_id)
+    for id in delete_ids:
+        id_list.remove(id)
+    print_queue.put('\n选课课程:')
+    for course_id in id_list:
+        print_queue.put(colorama.Fore.LIGHTCYAN_EX +
+                        '{} {}'.format(course_name_map[course_id]['cid'], course_name_map[course_id]['name']))
 
-        if not id_list:
-            print_queue.put('无可选课程, 退出')
-            sys.exit(1)
-        print_queue.put('总学分: {}'.format(sum([course_name_map[cid]['credit'] for cid in id_list])))
-        print_queue.put('')
-        for item in id_list:
-            if item not in course_name_map.keys():
-                print_queue.put(colorama.Fore.LIGHTRED_EX +
-                                '警告: 课程 id 为 {} 的课程无数据. 尝试更新课程列表或检查课程 id 输入'.format(item))
-
-        while not print_queue.empty(): pass
-        input('按 Enter 键继续\n')
-        print_queue.put('开始批量自动选课......\n')
-        start_time = time.time() * 1e3
-        success, failed = do_batch_enroll(id_list)
-        logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
-    elif mode == 'single':  # interactive mode
-        success, failed = do_interactive_enroll()
-    else:
+    if not id_list:
+        print_queue.put('无可选课程, 退出')
         sys.exit(1)
+    print_queue.put('总学分: {}'.format(sum([course_name_map[cid]['credit'] for cid in id_list])))
+    print_queue.put('')
+    for item in id_list:
+        if item not in course_name_map.keys():
+            print_queue.put(colorama.Fore.LIGHTRED_EX +
+                            '警告: 课程 id 为 {} 的课程无数据. 尝试更新课程列表或检查课程 id 输入'.format(item))
+
+    while not print_queue.empty(): pass
+    input('按 Enter 键继续\n')
+    print_queue.put('开始批量自动选课......\n')
+    start_time = time.time() * 1e3
+    success, failed = do_batch_enroll(id_list)
+    logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
 
     print_queue.put(colorama.Fore.LIGHTBLUE_EX + '\n自动选课完成!\n')
 
