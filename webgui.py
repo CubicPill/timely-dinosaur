@@ -24,6 +24,7 @@ def search():
     query = json_data.get('query')
     if not query:
         return jsonify({'ok': False, 'error': 'No query data'})
+
     return jsonify({'ok': True})
 
 

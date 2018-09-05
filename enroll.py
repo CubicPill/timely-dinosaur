@@ -133,8 +133,6 @@ def do_batch_enroll(course_ids):
     return success, failed
 
 
-
-
 def fetch_course_data():
     """
     fetch course data from server
@@ -325,7 +323,8 @@ def get_args():
         'usn': usn,
         'pwd': pwd,
         'id_list': id_list,
-        'wait': wait
+        'wait': wait,
+        'mode': mode
     }
 
 

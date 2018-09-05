@@ -1,16 +1,16 @@
-.sidenav {
-    height: 100%; /* Full-height: remove this if you want "auto" height */
-    width: 20%; /* Set the width of the sidebar */
-    position: fixed; /* Fixed Sidebar (stay in place on scroll) */
-    z-index: 1; /* Stay on top */
-    top: 0; /* Stay at the top */
+#sidebar {
+    height: 100%;
+    width: 20%;
+    position: fixed;
+    z-index: 1;
+    top: 0;
     left: 0;
-    background-color: darkgray; /* Black */
-    overflow-x: hidden; /* Disable horizontal scroll */
+    background-color: #cccccc;
+    overflow-x: hidden;
     padding-top: 20px;
 }
 
-.sidenav a {
+#sidebar a {
     padding: 6px 8px 6px 16px;
     text-decoration: none;
     font-size: 25px;
@@ -18,7 +18,7 @@
     display: block;
 }
 
-.sidenav a:hover {
+#sidebar a:hover {
     color: #f1f1f1;
 }
 
@@ -35,8 +35,7 @@
 }
 
 .search-container button {
-    height: 32px;
-    width: 32px;
+    width: 40px;
     padding: 6px 6px;
     margin-top: 8px;
     background: #ddd;
@@ -48,9 +47,9 @@
     background: #ccc;
 }
 
-.main {
+#tbl-container {
     margin-left: 20%; /* Same as the width of the sidebar */
-    padding: 0px 10px;
+    padding: 0 10px;
 }
 
 #search-container {
