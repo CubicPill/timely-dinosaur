@@ -8,6 +8,16 @@ from requests.structures import CaseInsensitiveDict
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/xsMain.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
 _global_session = requests.session()
+from enum import Enum
+
+
+class CourseType(Enum):
+    REQUIRED = 0
+    ELECTIVE = 1
+    PLANNED = 2
+    CROSS_GRADE = 3
+    CROSS_DEPT = 4
+    COMMON = 5
 
 
 def validate_session(_session=None) -> bool:

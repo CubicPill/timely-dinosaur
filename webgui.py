@@ -49,11 +49,6 @@ def read_saved_result():
         return app.send_static_file('web_saved.json')
 
 
-@app.route('/exit', methods=['POST'])
-def exit_program():
-    sys.exit(0)
-
-
 def main():
     print('Please go to http://localhost:2333 to view the web GUI')
     app.run(host='localhost', port=2333)
