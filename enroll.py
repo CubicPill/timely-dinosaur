@@ -13,7 +13,7 @@ import requests
 
 from crawler import fetch_course_data
 from utils import do_login, logout_session, ENROLL_URLS, TYPES_STR, load_session_pickle, get_session, \
-    dump_session_pickle, remove_session_pickle
+    dump_session_pickle, remove_session_pickle, load_config_from_file
 
 session: requests.session = get_session()
 course_name_map = dict()
@@ -40,18 +40,6 @@ def thread_print():
     while True:
         content = print_queue.get()
         print(content, flush=True)
-
-
-def load_config_from_file():
-    if 'config.json' not in os.listdir('./'):
-        print(colorama.Fore.LIGHTRED_EX + '未找到配置文件!')
-        input('按 Enter 键退出')
-        sys.exit(1)
-    with open('config.json') as f:
-        config = json.load(f)
-    config['course_id'] = [str(i) for i in config['course_id']]
-    logging.debug('Config loaded!')
-    return config
 
 
 class EnrollThread(Thread):
@@ -185,7 +173,16 @@ def print_result_list(success, failed):
 
 def get_args():
     # priority: config file > default settings
+    if 'config.json' not in os.listdir('./'):
+        print(colorama.Fore.LIGHTRED_EX + '未找到配置文件 config.json!')
+        input('按 Enter 键退出')
+        sys.exit(1)
+    if 'course_list.txt' not in os.listdir('./'):
+        print(colorama.Fore.LIGHTRED_EX + '未找到配置文件 course_list.txt!')
+        input('按 Enter 键退出')
+        sys.exit(1)
     config = load_config_from_file()
+    logging.debug('Config loaded!')
     mode = config.get('mode') if 'mode' in config else 'batch'
     reload_course = config.get('reload') if 'reload' in config else True
     usn = config.get('username')

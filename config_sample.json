@@ -1,10 +1,6 @@
 {
   "username": "usn",
   "password": "pwd",
-  "course_id": [
-    "201620173000046",
-    "201620173000047"
-  ],
   "mode": "batch",
   "reload": true,
   "wait": true,

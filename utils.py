@@ -78,7 +78,7 @@ def load_session_pickle() -> str:
     with open('session.pickle', 'rb') as f:
         try:
             _session = pickle.load(f)
-        except:
+        except Exception as e:
             return 'CORRUPTED'
 
         else:
@@ -125,8 +125,8 @@ def load_config_from_file():
         config = json.load(f)
     course_id_list = list()
     with open('course_list.txt') as f:
-        for l in f.readlines():
-            if l and l != '\n':
-                course_id_list.append(l.split('#', 1)[0])
+        for line in f.readlines():
+            if line and line != '\n':
+                course_id_list.append(line.split('#', 1)[0])
     config['course_id'] = course_id_list
     return config
