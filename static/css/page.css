@@ -22,11 +22,11 @@
     color: #f1f1f1;
 }
 
-.search-container {
+#search-container {
     padding-left: 10%;
 }
 
-.search-container input[type=text] {
+#search-container input[type=text] {
     width: 60%;
     padding: 6px;
     margin-top: 8px;
@@ -34,7 +34,7 @@
     border: none;
 }
 
-.search-container button {
+#search-container button {
     width: 40px;
     padding: 6px 6px;
     margin-top: 8px;
@@ -43,7 +43,7 @@
     cursor: pointer;
 }
 
-.search-container button:hover {
+#search-container button:hover {
     background: #ccc;
 }
 
@@ -52,11 +52,6 @@
     padding: 0 10px;
 }
 
-#search-container {
-    width: 20%;
-    height: 100%;
-
-}
 
 #search-bar {
     text-align: center;

@@ -10,8 +10,10 @@ from queue import Queue
 from threading import Thread
 import colorama
 import requests
+
+from crawler import fetch_course_data
 from utils import do_login, logout_session, ENROLL_URLS, TYPES_STR, load_session_pickle, get_session, \
-    dump_session_pickle, remove_session_pickle
+    dump_session_pickle, remove_session_pickle, load_config_from_file
 
 session: requests.session = get_session()
 course_name_map = dict()
@@ -38,18 +40,6 @@ def thread_print():
     while True:
         content = print_queue.get()
         print(content, flush=True)
-
-
-def load_config_from_file():
-    if 'config.json' not in os.listdir('./'):
-        print(colorama.Fore.LIGHTRED_EX + '未找到配置文件!')
-        input('按 Enter 键退出')
-        sys.exit(1)
-    with open('config.json') as f:
-        config = json.load(f)
-    config['course_id'] = [str(i) for i in config['course_id']]
-    logging.debug('Config loaded!')
-    return config
 
 
 class EnrollThread(Thread):
@@ -133,122 +123,6 @@ def do_batch_enroll(course_ids):
     return success, failed
 
 
-def fetch_course_data():
-    """
-    fetch course data from server
-    :return: course data
-    """
-    params = {
-        'kcxx': '',
-        'skls': '',
-        'skxq': '',
-        'skjs': '',
-        'sfym': False,
-        'sfct': False,
-        'sEcho': 1,
-        'iDisplayStart': 0,
-        'iDisplayLength': 750
-    }
-
-    url_required = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkBxxk'
-    # 必修选课
-
-    url_elective = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkXxxk'
-    # 选修选课
-
-    url_sem_plan = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkBxqjhxk'
-    # 本学期计划选课
-
-    url_cross_grade = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkKnjxk'
-    # 专业内跨年级选课
-
-    url_cross_dept = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkFawxk'
-    # 跨专业选课
-
-    url_common = 'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xsxkGgxxkxk'
-    # 公选课选课
-
-    try:
-        required = session.post(url_required, data=params)
-        if required.status_code == 404:
-            print('登录状态错误!')
-            logging.critical('Error occurred while querying course data')
-            sys.exit(1)
-        required = required.json()
-        for item in required.get('aaData'):
-            item['__type'] = 0
-        logging.debug('Required courses fetching done, total: {}, fetched: {}'
-                      .format(required['iTotalRecords'], len(required['aaData'])))
-    except json.JSONDecodeError:
-        logging.warning('Required courses fetching error')
-        required = {'aaData': []}
-        print('错误: 必修选课课程信息获取失败!')
-
-    try:
-        elective = session.post(url_elective, data=params).json()
-        for item in elective.get('aaData'):
-            item['__type'] = 1
-        logging.debug('Elective courses fetching done, total: {}, fetched: {}'
-                      .format(elective['iTotalRecords'], len(elective['aaData'])))
-    except json.JSONDecodeError:
-        logging.warning('Elective courses fetching error')
-        elective = {'aaData': []}
-        print('错误: 选修选课课程信息获取失败!')
-
-    try:
-        sem_plan = session.post(url_sem_plan, data=params).json()
-        for item in sem_plan.get('aaData'):
-            item['__type'] = 2
-        logging.debug('Cross grade courses fetching done, total: {}, fetched: {}'
-                      .format(sem_plan['iTotalRecords'], len(sem_plan['aaData'])))
-    except json.JSONDecodeError:
-        logging.warning('Semester planning courses fetching error')
-        sem_plan = {'aaData': []}
-        print('错误: 学期内计划选课课程信息获取失败!')
-
-    try:
-        cross_grade = session.post(url_cross_grade, data=params).json()
-        for item in cross_grade.get('aaData'):
-            item['__type'] = 3
-        logging.debug('Cross grade courses fetching done, total: {}, fetched: {}'
-                      .format(cross_grade['iTotalRecords'], len(cross_grade['aaData'])))
-    except json.JSONDecodeError:
-        logging.warning('Cross grade courses fetching error')
-        cross_grade = {'aaData': []}
-        print('错误: 跨年级选课课程信息获取失败!')
-    try:
-        cross_dept = session.post(url_cross_dept, data=params).json()
-        for item in cross_dept.get('aaData'):
-            item['__type'] = 4
-        logging.debug('Cross department courses fetching done, total: {}, fetched: {}'
-                      .format(cross_dept['iTotalRecords'], len(cross_dept['aaData'])))
-    except json.JSONDecodeError:
-        logging.warning('Cross department courses fetching error')
-        cross_dept = {'aaData': []}
-        print('错误: 跨专业选课课程信息获取失败!')
-    try:
-        common = session.post(url_common, data=params).json()
-        for item in common.get('aaData'):
-            item['__type'] = 5
-        logging.debug('Common courses fetching done, total: {}, fetched: {}'
-                      .format(common['iTotalRecords'], len(common['aaData'])))
-    except json.JSONDecodeError:
-        logging.warning('Common courses fetching error')
-        common = {'aaData': []}
-        print('错误: 公选课选课课程信息获取失败!')
-
-    data = required.get('aaData') + elective.get('aaData') + sem_plan.get('aaData') + cross_grade.get('aaData') \
-           + cross_dept.get('aaData') + common.get('aaData')
-    logging.debug('All course data fetching done. {} records in total.'.format(len(data)))
-
-    with open('course_data.json', 'w', encoding='utf8') as f:
-        d = json.dumps(data, indent=3, ensure_ascii=False).encode().decode('utf-8')
-        f.write(d)
-        logging.debug('Course data written to file')
-
-    return data
-
-
 def create_id_name_map(data):
     """
     create a dict mapping the course id and names
@@ -299,7 +173,16 @@ def print_result_list(success, failed):
 
 def get_args():
     # priority: config file > default settings
+    if 'config.json' not in os.listdir('./'):
+        print(colorama.Fore.LIGHTRED_EX + '未找到配置文件 config.json!')
+        input('按 Enter 键退出')
+        sys.exit(1)
+    if 'course_list.txt' not in os.listdir('./'):
+        print(colorama.Fore.LIGHTRED_EX + '未找到配置文件 course_list.txt!')
+        input('按 Enter 键退出')
+        sys.exit(1)
     config = load_config_from_file()
+    logging.debug('Config loaded!')
     mode = config.get('mode') if 'mode' in config else 'batch'
     reload_course = config.get('reload') if 'reload' in config else True
     usn = config.get('username')
@@ -390,6 +273,10 @@ def main(mode, reload_course, usn, pwd, id_list, wait):
         print('获取全部课程列表......', end='')
         start_time = time.time() * 1e3
         data = fetch_course_data()
+        with open('course_data.json', 'w', encoding='utf8') as f:
+            d = json.dumps(data, indent=3, ensure_ascii=False).encode().decode('utf-8')
+            f.write(d)
+            logging.debug('Course data written to file')
         print(colorama.Fore.LIGHTGREEN_EX + '课程列表获取完成!\n')
         logging.info('Course list fetching done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
 

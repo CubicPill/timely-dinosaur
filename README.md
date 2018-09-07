@@ -1,7 +1,7 @@
 # timely-dinosaur
 南方科技大学教务系统自动选课    
 理论上适用于所有[湖南强智科技](http://www.qzdatasoft.com/web/)教务系统平台, 修改链接, 适配登录即可 (不支持志愿选课和积分选课)    
-使用 Python3 编写, 基于 requests 和 bs4 包, 网络条件良好时批量选课可在五秒钟内全部完成
+使用 Python3 编写, 基于 requests 和 bs4 包, 网络条件良好时批量选课可在五秒钟内全部完成 (保守估计, 一般选课请求过程会在 200ms 内完成)
 
 ## 使用帮助
 **Windows:** 到 [Latest Release](https://github.com/CubicPill/timely-dinosaur/releases/latest) 下载 pyinstaller 打包好的 .exe 文件, 创建配置文件后即可运行.        
@@ -14,20 +14,16 @@ Tips: 可在开放选课预览时提前运行程序获取全部课程信息, 以
 
 
 ## 配置参数
-修改 ```config.json```    
+### 修改 ```config.json```
 ```username``` CAS 登录用户名(学号)    
 ```password``` CAS 登录密码    
-```course_id``` 课程 ID     
-新版程序可以接受命令行参数, 请使用 -h / --help 查看详细命令    
+新版程序可以接受命令行参数, 请使用 -h / --help 查看详细命令
 参数优先级: 命令行 > 配置文件 > 默认值     
+
+### 修改 ```course_list.txt```
+填入课程编号即可, 每行一个, 可以加井号作注释, 请参考样例
 
 ## 获取 course_id
 打开教务系统选课页面, 鼠标移至课程 "选课" 超链接上, 右键弹出菜单中点击 "复制链接地址", 得到如下内容:    
 ```javascript:xsxkFun('201620173000048');```    
 其中 ```201620173000048``` 即为课程 id, 填入 ```config.json``` 中即可批量选课
-
-## JSON 字段名称解释及数据结构
-
-### 字段名称及含义
-
-###

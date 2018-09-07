@@ -3,6 +3,9 @@ import json
 import os
 import logging
 import sys
+from transform import parse_course_data
+from utils import get_course_type_enum_from_int
+from db import Database
 
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(asctime)s %(name)s %(threadName)s %(message)s',
                     filename='td_web.log')
@@ -11,6 +14,8 @@ logging.getLogger('urllib3.connectionpool').setLevel(logging.WARNING)
 logging.getLogger('chardet.charsetprober').setLevel(logging.WARNING)
 
 app = Flask(__name__, static_path='')
+
+database = Database()
 
 
 @app.route('/')
@@ -41,25 +46,21 @@ def save_result():
     return jsonify({'ok': True})
 
 
-@app.route('/load', methods=['GET'])
-def read_saved_result():
-    if not os.path.isfile('web_saved.json'):
-        return jsonify({})
-    else:
-        return app.send_static_file('web_saved.json')
-
-
-@app.route('/exit', methods=['POST'])
-def exit_program():
-    sys.exit(0)
-
-
 def main():
     print('Please go to http://localhost:2333 to view the web GUI')
     app.run(host='localhost', port=2333)
 
 
+def init_data():
+    with open('course_data.json', encoding='utf-8') as f:
+        data = json.load(f)
+        for d in data:
+            (basic_data, course_type), schedule_data = parse_course_data(d, get_course_type_enum_from_int(d['__type']))
+            database.add_course(basic_data, schedule_data, course_type)
+
+
 def init():
+    init_data()
     main()
 
 

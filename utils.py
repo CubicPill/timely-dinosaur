@@ -1,13 +1,45 @@
+import json
 import logging
 import os
 import pickle
 import requests
 from bs4 import BeautifulSoup
 from requests.structures import CaseInsensitiveDict
+from enum import IntEnum
 
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/xsMain.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
 _global_session = requests.session()
+
+ENROLL_URLS = [
+    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/bxxkOper?jx0404id={id}&xkzy=&trjf=',
+    # 必修选课
+    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xxxkOper?jx0404id={id}&xkzy=&trjf=',
+    # 选修选课
+    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/bxqjhxkOper?jx0404id={id}&xkzy=&trjf=',
+    # 本学期计划选课
+    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/knjxkOper?jx0404id={id}&xkzy=&trjf=',
+    # 跨年级
+    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/fawxkOper?jx0404id={id}&xkzy=&trjf=',
+    # 跨专业
+    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/ggxxkxkOper?jx0404id={id}&xkzy=&trjf='
+    # 公选课
+]
+TYPES_STR = ['必修', '选修', '本学期计划', '跨年级', '跨专业', '公共课']
+
+
+class CourseType(IntEnum):
+    REQUIRED = 0
+    ELECTIVE = 1
+    PLANNED = 2
+    CROSS_GRADE = 3
+    CROSS_DEPT = 4
+    COMMON = 5
+
+
+def get_course_type_enum_from_int(i):
+    return [CourseType.REQUIRED, CourseType.ELECTIVE, CourseType.PLANNED, CourseType.CROSS_GRADE, CourseType.CROSS_DEPT,
+            CourseType.COMMON][i]
 
 
 def validate_session(_session=None) -> bool:
@@ -62,7 +94,7 @@ def load_session_pickle() -> str:
     with open('session.pickle', 'rb') as f:
         try:
             _session = pickle.load(f)
-        except:
+        except Exception as e:
             return 'CORRUPTED'
 
         else:
@@ -87,18 +119,13 @@ def remove_session_pickle():
     return False
 
 
-ENROLL_URLS = [
-    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/bxxkOper?jx0404id={id}&xkzy=&trjf=',
-    # 必修选课
-    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/xxxkOper?jx0404id={id}&xkzy=&trjf=',
-    # 选修选课
-    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/bxqjhxkOper?jx0404id={id}&xkzy=&trjf=',
-    # 本学期计划选课
-    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/knjxkOper?jx0404id={id}&xkzy=&trjf=',
-    # 跨年级
-    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/fawxkOper?jx0404id={id}&xkzy=&trjf=',
-    # 跨专业
-    'http://jwxt.sustc.edu.cn/jsxsd/xsxkkc/ggxxkxkOper?jx0404id={id}&xkzy=&trjf='
-    # 公选课
-]
-TYPES_STR = ['必修', '选修', '本学期计划', '跨年级', '跨专业', '公共课']
+def load_config_from_file():
+    with open('config.json') as f:
+        config = json.load(f)
+    course_id_list = list()
+    with open('course_list.txt') as f:
+        for line in f.readlines():
+            if line and line != '\n':
+                course_id_list.append(line.split('#', 1)[0])
+    config['course_id'] = course_id_list
+    return config
