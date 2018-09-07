@@ -28,5 +28,5 @@ def parse_course_data(course_json, type):
             l['kkzc']
         ])
 
-    return (course_id, capacity, course_name, course_sub_name, course_no, instructor, prerequisite, credit,
-            department, type), schedules
+    return ((course_id, capacity, course_name, course_sub_name, course_no, instructor, prerequisite, credit,
+             department), type), schedules

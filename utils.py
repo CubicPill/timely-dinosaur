@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import pickle
@@ -18,6 +19,11 @@ class CourseType(IntEnum):
     CROSS_GRADE = 3
     CROSS_DEPT = 4
     COMMON = 5
+
+
+def get_course_type_enum_from_int(i):
+    return [CourseType.REQUIRED, CourseType.ELECTIVE, CourseType.PLANNED, CourseType.CROSS_GRADE, CourseType.CROSS_DEPT,
+            CourseType.COMMON][i]
 
 
 def validate_session(_session=None) -> bool:
@@ -112,3 +118,15 @@ ENROLL_URLS = [
     # 公选课
 ]
 TYPES_STR = ['必修', '选修', '本学期计划', '跨年级', '跨专业', '公共课']
+
+
+def load_config_from_file():
+    with open('config.json') as f:
+        config = json.load(f)
+    course_id_list = list()
+    with open('course_list.txt') as f:
+        for l in f.readlines():
+            if l and l != '\n':
+                course_id_list.append(l.split('#', 1)[0])
+    config['course_id'] = course_id_list
+    return config

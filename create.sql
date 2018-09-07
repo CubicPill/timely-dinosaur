@@ -24,7 +24,6 @@ CREATE TABLE IF NOT EXISTS courseSchedule (
   `time`      VARCHAR(45) NOT NULL,
   `dayOfWeek` INT         NOT NULL,
   `weeks2`    VARCHAR(45) NULL, -- kkzc 字段
-  PRIMARY KEY (`jx0404id`),
   CONSTRAINT `id_fk`
   FOREIGN KEY (`jx0404id`)
   REFERENCES course (`jx0404id`)

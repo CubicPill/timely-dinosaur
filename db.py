@@ -8,12 +8,12 @@ class Database:
     def __init__(self):
         self._connection = sqlite3.connect(DB_PATH)
 
-    def add_course(self, course_basic_data, course_schedule, course_type):
+    def add_course(self, course_basic_data, course_schedule, course_type: CourseType):
         cursor = self._connection.cursor()
         cursor.execute('INSERT INTO course '
                        '(jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type)'
                        'VALUES '
-                       '(?,?,?,?,?,?,?,?,?,?)', course_basic_data + course_type)
+                       '(?,?,?,?,?,?,?,?,?,?)', course_basic_data + (course_type.name,))
         for s in course_schedule:
             cursor.execute('INSERT INTO courseSchedule '
                            '(jx0404id, weeks, classroom, time, dayOfWeek, weeks2) '
