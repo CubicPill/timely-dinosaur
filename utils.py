@@ -4,14 +4,14 @@ import pickle
 import requests
 from bs4 import BeautifulSoup
 from requests.structures import CaseInsensitiveDict
+from enum import IntEnum
 
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/xsMain.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
 _global_session = requests.session()
-from enum import Enum
 
 
-class CourseType(Enum):
+class CourseType(IntEnum):
     REQUIRED = 0
     ELECTIVE = 1
     PLANNED = 2
