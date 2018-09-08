@@ -27,10 +27,12 @@ def index():
 def search():
     json_data = request.get_json()
     query = json_data.get('query')
+    query_type = json_data.get('queryType')
     if not query:
         return jsonify({'ok': False, 'error': 'No query data'})
-
-    return jsonify({'ok': True})
+    if not query_type:
+        return jsonify({'ok': False, 'error': 'No query type'})
+    return jsonify({'ok': True, 'data': database.search_by_course_name(query)})
 
 
 @app.route('/detail/<course_id>', methods=['GET'])
@@ -53,6 +55,7 @@ def main():
 
 def init_data():
     database.init_db()
+    logging.debug('db init done')
     with open('course_data.json', encoding='utf-8') as f:
         data = json.load(f)
         for d in data:
@@ -63,9 +66,11 @@ def init_data():
 
 def init():
     logging.info('**********Start web gui**********')
+    logging.info('load data into db')
     print('Loading data into database...')
     init_data()
     print('...Done!')
+    logging.info('data loading done')
     main()
 
 

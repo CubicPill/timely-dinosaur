@@ -28,16 +28,36 @@ class Database:
         self._connection.commit()
 
     def search_by_course_no(self, course_no):
-        pass
+        cursor = self._connection.execute('SELECT '
+                                          'jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type '
+                                          'FROM course '
+                                          'WHERE courseNo LIKE \'?%\'', (course_no,))
+        return [dict(zip(['jx0404id', 'capacity', 'name', 'subName', 'courseNo', 'instructor', 'prerequisite', 'credit',
+                          'department', 'type'], row)) for row in cursor]
 
     def search_by_course_name(self, course_name):
-        pass
+        cursor = self._connection.execute('SELECT '
+                                          'jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type '
+                                          'FROM course '
+                                          'WHERE name LIKE \'%?%\'', (course_name,))
+        return [dict(zip(['jx0404id', 'capacity', 'name', 'subName', 'courseNo', 'instructor', 'prerequisite', 'credit',
+                          'department', 'type'], row)) for row in cursor]
 
     def search_by_department(self, department):
-        pass
+        cursor = self._connection.execute('SELECT '
+                                          'jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type '
+                                          'FROM course '
+                                          'WHERE department LIKE \'%?%\'', (department,))
+        return [dict(zip(['jx0404id', 'capacity', 'name', 'subName', 'courseNo', 'instructor', 'prerequisite', 'credit',
+                          'department', 'type'], row)) for row in cursor]
 
-    def search_by_instructor(self):
-        pass
+    def search_by_instructor(self, instructor):
+        cursor = self._connection.execute('SELECT '
+                                          'jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type '
+                                          'FROM course '
+                                          'WHERE instructor LIKE \'%?%\'', (instructor,))
+        return [dict(zip(['jx0404id', 'capacity', 'name', 'subName', 'courseNo', 'instructor', 'prerequisite', 'credit',
+                          'department', 'type'], row)) for row in cursor]
 
     def get_course_basic_data(self, course_id):
         cursor = self._connection.cursor()
