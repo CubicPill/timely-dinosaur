@@ -8,6 +8,12 @@ class Database:
     def __init__(self):
         self._connection = sqlite3.connect(DB_PATH)
 
+    def init_db(self):
+        with open('create.sql', encoding='utf-8') as f:
+            cursor = self._connection.cursor()
+            cursor.executescript(f.read())
+        self._connection.commit()
+
     def add_course(self, course_basic_data, course_schedule, course_type: CourseType):
         cursor = self._connection.cursor()
         cursor.execute('INSERT INTO course '
@@ -20,6 +26,18 @@ class Database:
                            'VALUES '
                            '(?,?,?,?,?,?)', s)
         self._connection.commit()
+
+    def search_by_course_no(self, course_no):
+        pass
+
+    def search_by_course_name(self, course_name):
+        pass
+
+    def search_by_department(self, department):
+        pass
+
+    def search_by_instructor(self):
+        pass
 
     def get_course_basic_data(self, course_id):
         cursor = self._connection.cursor()

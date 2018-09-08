@@ -52,15 +52,20 @@ def main():
 
 
 def init_data():
+    database.init_db()
     with open('course_data.json', encoding='utf-8') as f:
         data = json.load(f)
         for d in data:
             (basic_data, course_type), schedule_data = parse_course_data(d, get_course_type_enum_from_int(d['__type']))
             database.add_course(basic_data, schedule_data, course_type)
+            logging.debug('Loaded: %s', basic_data[0])
 
 
 def init():
+    logging.info('**********Start web gui**********')
+    print('Loading data into database...')
     init_data()
+    print('...Done!')
     main()
 
 
