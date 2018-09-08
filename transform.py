@@ -1,6 +1,12 @@
 import json
 
 
+def strip(text):
+    if text is None:
+        return None
+    return text.strip()
+
+
 def parse_course_data(course_json, type):
     """
     (jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type)
@@ -9,13 +15,13 @@ def parse_course_data(course_json, type):
     """
     course_id = int(course_json['jx0404id'])
     capacity = int(course_json['pkrs'])
-    course_name = course_json['kcmc']
-    course_sub_name = course_json['fzmc']
+    course_name = strip(course_json['kcmc'])
+    course_sub_name = strip(course_json['fzmc'])
     course_no = course_json['kch']
-    instructor = course_json['skls']
+    instructor = strip(course_json['skls'])
     prerequisite = course_json['pgtj']
     credit = int(course_json['xf'])
-    department = course_json['dwmc']
+    department = strip(course_json['dwmc'])
 
     schedules = list()
     for l in course_json['kkapList']:

@@ -31,7 +31,7 @@ class Database:
         cursor = self._connection.execute('SELECT '
                                           'jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type '
                                           'FROM course '
-                                          'WHERE courseNo LIKE \'?%\'', (course_no,))
+                                          'WHERE courseNo LIKE ?', (course_no + '%',))
         return [dict(zip(['jx0404id', 'capacity', 'name', 'subName', 'courseNo', 'instructor', 'prerequisite', 'credit',
                           'department', 'type'], row)) for row in cursor]
 
@@ -39,7 +39,7 @@ class Database:
         cursor = self._connection.execute('SELECT '
                                           'jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type '
                                           'FROM course '
-                                          'WHERE name LIKE \'%?%\'', (course_name,))
+                                          'WHERE name LIKE ?', ('%' + course_name + '%',))
         return [dict(zip(['jx0404id', 'capacity', 'name', 'subName', 'courseNo', 'instructor', 'prerequisite', 'credit',
                           'department', 'type'], row)) for row in cursor]
 
@@ -47,7 +47,7 @@ class Database:
         cursor = self._connection.execute('SELECT '
                                           'jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type '
                                           'FROM course '
-                                          'WHERE department LIKE \'%?%\'', (department,))
+                                          'WHERE department LIKE ?', ('%' + department + '%',))
         return [dict(zip(['jx0404id', 'capacity', 'name', 'subName', 'courseNo', 'instructor', 'prerequisite', 'credit',
                           'department', 'type'], row)) for row in cursor]
 
@@ -55,7 +55,7 @@ class Database:
         cursor = self._connection.execute('SELECT '
                                           'jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type '
                                           'FROM course '
-                                          'WHERE instructor LIKE \'%?%\'', (instructor,))
+                                          'WHERE instructor LIKE ?', ('%' + instructor + '%',))
         return [dict(zip(['jx0404id', 'capacity', 'name', 'subName', 'courseNo', 'instructor', 'prerequisite', 'credit',
                           'department', 'type'], row)) for row in cursor]
 

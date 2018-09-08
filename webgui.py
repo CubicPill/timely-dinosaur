@@ -32,7 +32,17 @@ def search():
         return jsonify({'ok': False, 'error': 'No query data'})
     if not query_type:
         return jsonify({'ok': False, 'error': 'No query type'})
-    return jsonify({'ok': True, 'data': database.search_by_course_name(query)})
+    if query_type == 'courseNo':
+        query_function = database.search_by_course_no
+    elif query_type == 'courseName':
+        query_function = database.search_by_course_name
+    elif query_type == 'department':
+        query_function = database.search_by_department
+    elif query_type == 'instructor':
+        query_function = database.search_by_instructor
+    else:
+        return jsonify({'ok': False, 'error': 'unknown query type: {}'.format(query_type)})
+    return jsonify({'ok': True, 'data': query_function(query)})
 
 
 @app.route('/detail/<course_id>', methods=['GET'])
