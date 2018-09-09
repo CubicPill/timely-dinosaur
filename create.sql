@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS course (
   `type`         VARCHAR(45) NULL, -- 课程类型（选修必修等）
   `credit`       INT         NOT NULL,
   `department`   VARCHAR(45) NULL,
+  `time`         VARCHAR(45) NULL,
+  `classroom`    VARCHAR(45) NULL,
   PRIMARY KEY (`jx0404id`),
   CONSTRAINT chk_type CHECK (type IN ('REQUIRED', 'ELECTIVE', 'PLANNED', 'CROSS_GRADE', 'CROSS_DEPT', 'COMMON'))
 );
