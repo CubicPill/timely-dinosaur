@@ -45,16 +45,23 @@ def search():
     return jsonify({'ok': True, 'data': query_function(query)})
 
 
-@app.route('/detail/<course_id>', methods=['GET'])
-def get_course_detail(course_id):
-    return jsonify({'ok': True})
+@app.route('/schedule/<course_id>', methods=['GET'])
+def get_course_schedule(course_id):
+    return jsonify({'ok': True, 'data': database.get_course_time(course_id)})
 
 
 @app.route('/save', methods=['POST'])
 def save_result():
     json_data = request.get_json()
-    with open('web_saved.json', 'w') as f:
-        json.dump(json_data, f)
+    save_list = list()
+    if not json_data.get('id'):
+        return jsonify({'ok': False, 'error': 'bad request'})
+    for id in json_data['id']:
+        detail = database.get_course_basic_data(id)
+        save_list.append(
+            '{}#{}|{}|{}|{}'.format(id, detail['courseNo'], detail['name'], detail['subName'], detail['time']))
+    with open('course_list.txt', 'w', encoding='utf-8') as f:
+        f.write('\n'.join(save_list))
     return jsonify({'ok': True})
 
 
