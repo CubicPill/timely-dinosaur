@@ -57,12 +57,14 @@ function generateCourseCard(data) {
 }
 
 function onSearchSuccess(data) {
+    var resultList = $("#result-list");
+    resultList.empty();
     if (!data.ok) {
         console.error('API return: Not OK');
         return;
     }
     for (var i = 0; i < data['data'].length; ++i) {
-        $("#result-list").append(generateCourseCard(data['data'][i]));
+        resultList.append(generateCourseCard(data['data'][i]));
     }
 }
 

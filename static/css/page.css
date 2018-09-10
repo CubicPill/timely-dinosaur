@@ -7,6 +7,7 @@
     left: 0;
     background-color: #cccccc;
     overflow-x: hidden;
+    overflow-y: hidden;
 }
 
 #sidebar a {
@@ -24,6 +25,7 @@
 #search-container {
     padding-left: 10%;
     background: #eeeeee;
+    height: 15%;
 }
 
 #search-container input[type=text] {
@@ -65,7 +67,7 @@
     margin-top: 20px;
     border-collapse: collapse;
     border-spacing: 0;
-    
+
 }
 
 .tr-sep {
@@ -102,6 +104,11 @@ th {
     overflow: hidden;
     word-break: normal;
     border: 1px solid black;
+}
+
+#result-container {
+    overflow-y: auto;
+    height: 85%;
 }
 
 #result-container ul {
