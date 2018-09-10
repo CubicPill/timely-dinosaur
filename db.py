@@ -1,7 +1,7 @@
 import sqlite3
 from utils import CourseType
 
-DB_PATH = './td.sqlite'
+DB_PATH = ':memory:'
 
 COURSE_TABLE_KEYS = ['jx0404id', 'capacity', 'name', 'subName', 'courseNo', 'instructor', 'prerequisite', 'credit',
                      'department', 'time', 'classroom', 'type']
@@ -27,7 +27,7 @@ class Database:
                        '(?,?,?,?,?,?,?,?,?,?,?,?)', course_basic_data + (course_type.name,))
         for s in course_schedule:
             cursor.execute('INSERT INTO courseSchedule '
-                           '(jx0404id, weeks, classroom, time, dayOfWeek, weeks2) '
+                           '(jx0404id, weeks, classroom, time, dayOfWeek, weekShort) '
                            'VALUES '
                            '(?,?,?,?,?,?)', s)
         self._connection.commit()
@@ -71,6 +71,7 @@ class Database:
     def get_course_time(self, course_id):
         cursor = self._connection.cursor()
         cursor.execute(
-            'SELECT jx0404id, weeks, classroom, time, dayOfWeek, weeks2 '
+            'SELECT jx0404id, weeks, classroom, time, dayOfWeek, weekShort '
             'FROM courseSchedule WHERE jx0404id = ?', (course_id,))
-        return dict(zip(['jx0404id', 'weeks', 'classroom', 'time', 'dayOfWeek', 'weeks2'], cursor.fetchone()))
+        return [dict(zip(['jx0404id', 'weeks', 'classroom', 'time', 'dayOfWeek', 'weekShort'], row)) for row in
+                cursor.fetchall()]

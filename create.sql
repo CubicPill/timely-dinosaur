@@ -23,10 +23,10 @@ CREATE TABLE IF NOT EXISTS course (
 CREATE TABLE IF NOT EXISTS courseSchedule (
   `jx0404id`  INT         NOT NULL,
   `weeks`     VARCHAR(45) NOT NULL, -- skzcList
-  `classroom` VARCHAR(45) NOT NULL,
+  `classroom` VARCHAR(45) NULL,
   `time`      VARCHAR(45) NOT NULL,
   `dayOfWeek` INT         NOT NULL,
-  `weeks2`    VARCHAR(45) NULL, -- kkzc 字段
+  `weekShort` VARCHAR(45) NULL, -- kkzc 字段
   CONSTRAINT `id_fk`
   FOREIGN KEY (`jx0404id`)
   REFERENCES course (`jx0404id`)
