@@ -13,9 +13,19 @@
 <body>
 <div id="sidebar">
     <div id="search-container">
-
-        <input type="text" placeholder="Search.." id="query-txt">
-        <button type="submit" id="query-btn"><i class="fa fa-search"></i></button>
+        <div id="search-bar-container">
+            <input type="text" placeholder="Search.." id="query-txt">
+            <button type="submit" id="query-btn"><i class="fa fa-search"></i></button>
+        </div>
+        <div id="query-type-container">
+            Search By:
+            <select id="query-type">
+                <option value="courseName">课程名</option>
+                <option value="courseNo">课程号</option>
+                <option value="department">开课院系</option>
+                <option value="instructor">上课教师</option>
+            </select>
+        </div>
 
     </div>
     <div id="result-container">

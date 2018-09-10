@@ -65,6 +65,23 @@ def save_result():
     return jsonify({'ok': True})
 
 
+@app.route('/save', methods=['GET'])
+def load_saved_result():
+    course_id_list = list()
+    with open('course_list.txt', encoding='utf-8') as f:
+        for line in f.readlines():
+            course_id_list.append(line.split('#', 1)[0])
+    return jsonify({
+        'ok': True,
+        'data': [
+            {
+                'basic': database.get_course_basic_data(cid),
+                'schedule': database.get_course_time(cid)
+            }
+            for cid in course_id_list]
+    })
+
+
 def main():
     print('Please go to http://localhost:2333 to view the web GUI')
     app.run(host='localhost', port=2333)

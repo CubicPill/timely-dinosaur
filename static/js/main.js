@@ -5,20 +5,22 @@ $(document).ready(function () {
 function initPage() {
     $("#query-btn").click(function () {
         console.log('search!');
-        let input = $("#query-txt");
-        if (!input.val()) {
+        var queryInput = $("#query-txt").val();
+        if (!queryInput) {
             return;
         }
+        var queryType = $("#query-type").val();
         $.ajax({
             type: "POST",
             url: "/search",
             data: JSON.stringify({
-                query: input.val()
+                query: queryInput,
+                queryType: queryType
+
             }),
             success: onSearchSuccess,
             contentType: "application/json"
         });
-        input.val("");
     });
     loadSavedResults();
 
@@ -33,18 +35,41 @@ function table(row, column, content) {
 
 }
 
+function generateCourseCard(data) {
+    console.log(data);
+    return "<li class='result'>" +
+        "<p>" +
+        data["courseNo"] + " " + data["name"] +
+        "</p>" +
+        "<p>" +
+        data["subName"] +
+        "</p>" +
+        "<p>" +
+        data["instructor"] +
+        "</p>" +
+        "<p>" +
+        data["classroom"] +
+        "</p>" +
+        "<p>" +
+        data["time"] +
+        "</p>" +
+        "</li>";
+}
+
 function onSearchSuccess(data) {
     if (!data.ok) {
         console.error('API return: Not OK');
         return;
     }
-    console.log(data);
+    for (var i = 0; i < data['data'].length; ++i) {
+        $("#result-list").append(generateCourseCard(data['data'][i]));
+    }
 }
 
 function loadSavedResults() {
     $.ajax({
         type: "GET",
-        url: "/load",
+        url: "/save",
         success: function (data) {
             console.log(data);
         },

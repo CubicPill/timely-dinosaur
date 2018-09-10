@@ -5,6 +5,7 @@ DB_PATH = ':memory:'
 
 COURSE_TABLE_KEYS = ['jx0404id', 'capacity', 'name', 'subName', 'courseNo', 'instructor', 'prerequisite', 'credit',
                      'department', 'time', 'classroom', 'type']
+COURSE_SCHEDULE_TABLE_KEYS = ['jx0404id', 'weeks', 'classroom', 'time', 'dayOfWeek', 'weekShort']
 
 
 class Database:
@@ -27,7 +28,9 @@ class Database:
                        '(?,?,?,?,?,?,?,?,?,?,?,?)', course_basic_data + (course_type.name,))
         for s in course_schedule:
             cursor.execute('INSERT INTO courseSchedule '
-                           '(jx0404id, weeks, classroom, time, dayOfWeek, weekShort) '
+                           '('
+                           + ','.join(COURSE_SCHEDULE_TABLE_KEYS) +
+                           ') '
                            'VALUES '
                            '(?,?,?,?,?,?)', s)
         self._connection.commit()
@@ -73,5 +76,5 @@ class Database:
         cursor.execute(
             'SELECT jx0404id, weeks, classroom, time, dayOfWeek, weekShort '
             'FROM courseSchedule WHERE jx0404id = ?', (course_id,))
-        return [dict(zip(['jx0404id', 'weeks', 'classroom', 'time', 'dayOfWeek', 'weekShort'], row)) for row in
+        return [dict(zip(COURSE_SCHEDULE_TABLE_KEYS, row)) for row in
                 cursor.fetchall()]

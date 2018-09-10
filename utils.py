@@ -123,7 +123,7 @@ def load_config_from_file():
     with open('config.json') as f:
         config = json.load(f)
     course_id_list = list()
-    with open('course_list.txt') as f:
+    with open('course_list.txt',encoding='utf-8') as f:
         for line in f.readlines():
             if line and line != '\n':
                 course_id_list.append(line.split('#', 1)[0])
