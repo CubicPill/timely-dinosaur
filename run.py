@@ -3,7 +3,7 @@ entry of the program
 """
 import argparse
 
-VERSION = 'v1.3.0'
+VERSION = 'v2.0.0'
 print('Timely Dinosaur ' + VERSION + ', Author: CubicPill')
 
 arg_parser = argparse.ArgumentParser(description='SUSTech course auto enroll')
