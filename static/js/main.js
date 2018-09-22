@@ -3,27 +3,29 @@ $(document).ready(function () {
 });
 
 function initPage() {
-    $("#query-btn").click(function () {
-        console.log('search!');
-        var queryInput = $("#query-txt").val();
-        if (!queryInput) {
-            return;
-        }
-        var queryType = $("#query-type").val();
-        $.ajax({
-            type: "POST",
-            url: "/search",
-            data: JSON.stringify({
-                query: queryInput,
-                queryType: queryType
-
-            }),
-            success: onSearchSuccess,
-            contentType: "application/json"
-        });
-    });
+    $("#query-btn").click(onClickSearchBtn);
     loadSavedResults();
 
+}
+
+function onClickSearchBtn() {
+    console.log('search!');
+    var queryInput = $("#query-txt").val();
+    if (!queryInput) {
+        return;
+    }
+    var queryType = $("#query-type").val();
+    $.ajax({
+        type: "POST",
+        url: "/search",
+        data: JSON.stringify({
+            query: queryInput,
+            queryType: queryType
+
+        }),
+        success: onSearchSuccess,
+        contentType: "application/json"
+    });
 }
 
 function saveResult() {
