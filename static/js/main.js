@@ -1,5 +1,6 @@
 $(document).ready(function () {
     initPage();
+    window.TDSeletions = [];
 });
 
 function initPage() {
@@ -38,8 +39,8 @@ function table(row, column, content) {
 }
 
 function generateCourseCard(data) {
-    console.log(data);
-    return "<li class='result'>" +
+
+    var element = $("<li class='result'>" +
         "<p>" +
         data["courseNo"] + " " + data["name"] +
         "</p>" +
@@ -55,7 +56,21 @@ function generateCourseCard(data) {
         "<p>" +
         data["time"] +
         "</p>" +
-        "</li>";
+        "</li>");
+    element.click(function () {
+        addToTable(data);
+        addToList(data);
+        window.TDSeletions.push(data["jx0404id"]);
+    });
+    return element;
+}
+
+function addToTable(data) {
+
+}
+
+function addToList(data) {
+
 }
 
 function onSearchSuccess(data) {
