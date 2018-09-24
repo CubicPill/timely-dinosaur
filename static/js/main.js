@@ -31,10 +31,16 @@ function onClickSearchBtn() {
 
 function saveResult() {
     console.log('Save result');
-
+    $.ajax({
+        type: "POST",
+        url: "/save",
+        data: JSON.stringify({
+            id: window.TDSeletions
+        })
+    });
 }
 
-function table(row, column, content) {
+function modifyCourseTable(row, column, content) {
 
 }
 
@@ -58,6 +64,9 @@ function generateCourseCard(data) {
         "</p>" +
         "</li>");
     element.click(function () {
+        if (window.TDSeletions.indexOf(data["jx0404id"]) >= 0) {
+            return;
+        }
         addToTable(data);
         addToList(data);
         window.TDSeletions.push(data["jx0404id"]);

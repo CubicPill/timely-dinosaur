@@ -65,45 +65,10 @@
 
 #tbl-main {
     margin-top: 20px;
-    border-collapse: collapse;
-    border-spacing: 0;
-
 }
 
 .tr-sep {
     height: 1em;
-}
-
-tr {
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 20px;
-    padding: 10px 5px;
-    overflow: hidden;
-    word-break: normal;
-    border: 1px solid black;
-    height: 20%;
-}
-
-td {
-
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 20px;
-    padding: 10px 5px;
-    overflow: hidden;
-    word-break: normal;
-    border: 1px solid black;
-    width: 10%;
-
-}
-
-th {
-    font-family: Helvetica, Arial, sans-serif;
-    font-size: 22px;
-    font-weight: normal;
-    padding: 10px 5px;
-    overflow: hidden;
-    word-break: normal;
-    border: 1px solid black;
 }
 
 #result-container {
