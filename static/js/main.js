@@ -39,9 +39,6 @@ function saveResult() {
     });
 }
 
-function modifyCourseTable(row, column, content) {
-
-}
 
 function generateCourseCard(data) {
 
@@ -66,14 +63,20 @@ function generateCourseCard(data) {
         if (window.TDSeletions.indexOf(data["jx0404id"]) >= 0) {
             return;
         }
-        addToTable(data);
+        addCourseToTable(data);
         addToList(data);
         window.TDSeletions.push(data["jx0404id"]);
     });
     return element;
 }
 
-function addToTable(data) {
+
+function modifyCourseTable(row, column, content) {
+
+}
+
+function addCourseToTable(data, schedule) {
+
 }
 
 function addToList(data) {
@@ -114,7 +117,7 @@ function loadSavedResults() {
         type: "GET",
         url: "/save",
         success: function (data) {
-            console.log(data);
+            
         },
 
         contentType: "application/json"
