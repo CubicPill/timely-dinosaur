@@ -10,12 +10,11 @@ function initPage() {
 }
 
 function onClickSearchBtn() {
-    console.log('search!');
-    var queryInput = $("#query-txt").val();
+    let queryInput = $("#query-txt").val();
     if (!queryInput) {
         return;
     }
-    var queryType = $("#query-type").val();
+    let queryType = $("#query-type").val();
     $.ajax({
         type: "POST",
         url: "/search",
@@ -46,7 +45,7 @@ function modifyCourseTable(row, column, content) {
 
 function generateCourseCard(data) {
 
-    var element = $("<li class='result'>" +
+    let element = $("<li class='result'>" +
         "<p>" +
         data["courseNo"] + " " + data["name"] +
         "</p>" +
@@ -75,21 +74,30 @@ function generateCourseCard(data) {
 }
 
 function addToTable(data) {
-
 }
 
 function addToList(data) {
-
+    let insertedRow = $(" <tr>" +
+        "                    <td>" + data["jx0404id"] + "</td>" +
+        "                    <td>" + data["courseNo"] + "</td>" +
+        "                    <td>" + data["name"] + "[" + data["subName"] + "]</td>" +
+        "                    <td>" + data["instructor"].replace(",", "<br>") + "</td>" +
+        "                    <td>" + data["time"].replace(",", "<br>") + "</td>" +
+        "                    <td>" + data["classroom"].replace(",", "<br>") + "</td>" +
+        "                    <td>" + data["prerequisite"] + "</td>" +
+        "                    <td>" + data["credit"] + "</td>" +
+        "                </tr>");
+    $('#tbl-selected tr:last').after(insertedRow);
 }
 
 function onSearchSuccess(data) {
-    var resultList = $("#result-list");
+    let resultList = $("#result-list");
     resultList.empty();
     if (!data.ok) {
         console.error('API return: Not OK');
         return;
     }
-    for (var i = 0; i < data['data'].length; ++i) {
+    for (let i = 0; i < data['data'].length; ++i) {
         resultList.append(generateCourseCard(data['data'][i]));
     }
 }
