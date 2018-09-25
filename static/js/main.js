@@ -77,17 +77,24 @@ function addToTable(data) {
 }
 
 function addToList(data) {
+
     let insertedRow = $(" <tr>" +
         "                    <td>" + data["jx0404id"] + "</td>" +
         "                    <td>" + data["courseNo"] + "</td>" +
-        "                    <td>" + data["name"] + "[" + data["subName"] + "]</td>" +
-        "                    <td>" + data["instructor"].replace(",", "<br>") + "</td>" +
-        "                    <td>" + data["time"].replace(",", "<br>") + "</td>" +
-        "                    <td>" + data["classroom"].replace(",", "<br>") + "</td>" +
-        "                    <td>" + data["prerequisite"] + "</td>" +
+        "                    <td>" + data["name"] + "<br>[" + data["subName"] + "]</td>" +
+        "                    <td>" + data["instructor"].split(",").join("<br>") + "</td>" +
+        "                    <td>" + data["time"].split("节,").join("节<br>") + "</td>" +
+        "                    <td>" + data["classroom"].split(",").join("<br>") + "</td>" +
+        "                    <td>" + data["prerequisite"].split(" ").join("<br>") + "</td>" +
         "                    <td>" + data["credit"] + "</td>" +
+        "                    <td><button class='btn btn-warning'>删除</button></td>" +
         "                </tr>");
+    let deleteButton = $(insertedRow).find("button");
+    deleteButton.click(function () {
+        alert(data["jx0404id"]);
+    });
     $('#tbl-selected tr:last').after(insertedRow);
+
 }
 
 function onSearchSuccess(data) {
