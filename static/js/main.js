@@ -63,24 +63,42 @@ function generateCourseCard(data) {
         if (window.TDSeletions.indexOf(data["jx0404id"]) >= 0) {
             return;
         }
-        addCourseToTable(data);
-        addToList(data);
-        window.TDSeletions.push(data["jx0404id"]);
+        $.ajax({
+            url: "/schedule/" + data["jx0404id"],
+            type: "GET",
+            success: function (schedule) {
+                console.log(schedule);
+                addCourseToTable(data, schedule["data"]);
+                addToList(data);
+                window.TDSeletions.push(data["jx0404id"]);
+            }
+        });
+
     });
     return element;
 }
 
 
-function modifyCourseTable(row, column, content) {
+function addCourseToTable(data, schedules) {
+    for (let i = 0; i < schedules.length; ++i) {
+        let schedule = schedules[i];
+        let time = schedule["time"].split("-");
+        let duration = parseInt(time[1]) - parseInt(time[0]) + 1;
+        console.log(schedule["time"] + " " + duration);
+        let courseDiv = $("");
+    }
 
 }
 
-function addCourseToTable(data, schedule) {
+function removeCourse(jx0404id) {
 
 }
 
 function addToList(data) {
-
+    console.log(data);
+    if (data["prerequisite"] === null) {
+        data["prerequisite"] = "无";
+    }
     let insertedRow = $(" <tr>" +
         "                    <td>" + data["jx0404id"] + "</td>" +
         "                    <td>" + data["courseNo"] + "</td>" +
@@ -94,7 +112,7 @@ function addToList(data) {
         "                </tr>");
     let deleteButton = $(insertedRow).find("button");
     deleteButton.click(function () {
-        alert(data["jx0404id"]);
+        removeCourse(data["jx0404id"]);
     });
     $('#tbl-selected tr:last').after(insertedRow);
 
@@ -117,16 +135,13 @@ function loadSavedResults() {
         type: "GET",
         url: "/save",
         success: function (data) {
-            
+
         },
 
         contentType: "application/json"
     });
 }
 
-function showSearchResults(data) {
-
-}
 
 function isCourseOverlap() {
 

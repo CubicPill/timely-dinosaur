@@ -77,6 +77,26 @@
     height: 50px;
 }
 
+#tbl-main div.course1 {
+    width: 175px;
+    height: 50px;
+}
+
+#tbl-main div.course2 {
+    width: 175px;
+    height: 100px;
+}
+
+#tbl-main div.course3 {
+    width: 175px;
+    height: 150px;
+}
+
+#tbl-main div.course4 {
+    width: 175px;
+    height: 200px;
+}
+
 #tbl-main td.vertical-header {
     font-size: 1em;
     padding: 0.75rem;
