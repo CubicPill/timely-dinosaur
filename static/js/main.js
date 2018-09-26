@@ -67,7 +67,6 @@ function generateCourseCard(data) {
             url: "/schedule/" + data["jx0404id"],
             type: "GET",
             success: function (schedule) {
-                console.log(schedule);
                 addCourseToTable(data, schedule["data"]);
                 addToList(data);
                 window.TDSeletions.push(data["jx0404id"]);
@@ -84,8 +83,16 @@ function addCourseToTable(data, schedules) {
         let schedule = schedules[i];
         let time = schedule["time"].split("-");
         let duration = parseInt(time[1]) - parseInt(time[0]) + 1;
-        console.log(schedule["time"] + " " + duration);
-        let courseDiv = $("");
+        let courseDiv = $("<div>" +
+            "<p>" + data["name"] + "</p>" +
+            "<p>" + schedule["classroom"] + "</p>" +
+            "<p>" + schedule["weekShort"] + "周</p>" +
+            "<p>" + data["name"] + "</p>" +
+            "</div>");
+        courseDiv.addClass("course");
+        courseDiv.addClass("course" + data["jx0404id"]);
+        courseDiv.addClass("course" + duration);
+        console.log(courseDiv.html());
     }
 
 }
@@ -93,11 +100,10 @@ function addCourseToTable(data, schedules) {
 function removeCourse(jx0404id) {
     window.TDSeletions.splice(window.TDSeletions.indexOf(jx0404id), 1);
     $("#tbl-selected tr#tr" + jx0404id).remove();
-    $("#tbl-main div#course" + jx0404id).remove();
+    $("#tbl-main div.course" + jx0404id).remove();
 }
 
 function addToList(data) {
-    console.log(data);
     if (data["prerequisite"] === null) {
         data["prerequisite"] = "无";
     }
