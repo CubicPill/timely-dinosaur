@@ -91,7 +91,9 @@ function addCourseToTable(data, schedules) {
 }
 
 function removeCourse(jx0404id) {
-
+    window.TDSeletions.splice(window.TDSeletions.indexOf(jx0404id), 1);
+    $("#tbl-selected tr#tr" + jx0404id).remove();
+    $("#tbl-main div#course" + jx0404id).remove();
 }
 
 function addToList(data) {
@@ -99,7 +101,7 @@ function addToList(data) {
     if (data["prerequisite"] === null) {
         data["prerequisite"] = "无";
     }
-    let insertedRow = $(" <tr>" +
+    let insertedRow = $(" <tr id='tr" + data["jx0404id"] + "'>" +
         "                    <td>" + data["jx0404id"] + "</td>" +
         "                    <td>" + data["courseNo"] + "</td>" +
         "                    <td>" + data["name"] + "<br>[" + data["subName"] + "]</td>" +
