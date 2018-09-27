@@ -1,3 +1,24 @@
+const colors = [
+    "#42a5f5",
+    "#3f51b5",
+    "#5e35b1",
+    "#ab47bc",
+    "#f06292",
+    "#ef9a9a",
+    "#f57f17",
+    "#afb42b",
+    "#7cb342",
+    "#4caf50",
+    "#00897b",
+    "#4dd0e1",
+    "#b39ddb",
+    "#b2dfdb",
+    "#546e7a",
+    "#9e9e9e",
+    "#8d6e63"
+];
+let colorsAvailable = colors;
+
 $(document).ready(function () {
     initPage();
     window.TDSeletions = [];
@@ -41,7 +62,15 @@ function saveResult() {
 
 
 function generateCourseCard(data) {
-
+    if (data["subName"] === null) {
+        data["subName"] = "";
+    }
+    if (data["classroom"] === null) {
+        data["classroom"] = "";
+    }
+    if (data["instructor"] === null) {
+        data["instructor"] = ""
+    }
     let element = $("<li class='result'>" +
         "<p>" +
         data["courseNo"] + " " + data["name"] +
@@ -77,22 +106,31 @@ function generateCourseCard(data) {
     return element;
 }
 
+function pickColor() {
+    let color = colorsAvailable[Math.floor(Math.random() * colorsAvailable.length)];
+    colorsAvailable.splice(colorsAvailable.indexOf(color), 1);
+    return color;
+}
 
 function addCourseToTable(data, schedules) {
+    let color = pickColor();
     for (let i = 0; i < schedules.length; ++i) {
         let schedule = schedules[i];
         let time = schedule["time"].split("-");
         let duration = parseInt(time[1]) - parseInt(time[0]) + 1;
+        if (schedule["classroom"] === null) {
+            schedule["classroom"] = "";
+        }
         let courseDiv = $("<div>" +
-            "<p>" + data["name"] + "</p>" +
-            "<p>" + schedule["classroom"] + "</p>" +
-            "<p>" + schedule["weekShort"] + "周</p>" +
-            "<p>" + data["name"] + "</p>" +
+            data["name"] + "<br>" +
+            schedule["classroom"] + "<br>" +
+            schedule["weekShort"] + "周" +
             "</div>");
         courseDiv.addClass("course");
         courseDiv.addClass("course" + data["jx0404id"]);
         courseDiv.addClass("course" + duration);
-        console.log(courseDiv.html());
+        courseDiv.css("background", color);
+        $("#class" + schedule["dayOfWeek"] + "-" + time[0]).append(courseDiv);
     }
 
 }
@@ -106,6 +144,9 @@ function removeCourse(jx0404id) {
 function addToList(data) {
     if (data["prerequisite"] === null) {
         data["prerequisite"] = "无";
+    }
+    if (data["classroom"] === null) {
+        data["classroom"] = "";
     }
     let insertedRow = $(" <tr id='tr" + data["jx0404id"] + "'>" +
         "                    <td>" + data["jx0404id"] + "</td>" +

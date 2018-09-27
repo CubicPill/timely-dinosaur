@@ -79,6 +79,8 @@
 
 #tbl-main div.course {
     position: absolute;
+    color: white;
+    text-align: center;
 }
 
 #tbl-main div.course1 {
