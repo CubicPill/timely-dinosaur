@@ -81,6 +81,8 @@
     position: absolute;
     color: white;
     text-align: center;
+    box-shadow: 3px 3px 10px #888;
+    padding-top: 10px;
 }
 
 #tbl-main div.course1 {

@@ -22,9 +22,11 @@ let colorsAvailable = colors;
 $(document).ready(function () {
     initPage();
     window.TDSeletions = [];
+    window.timeTable = [];
 });
 
 function initPage() {
+
     $("#query-btn").click(onClickSearchBtn);
     loadSavedResults();
 
@@ -107,6 +109,9 @@ function generateCourseCard(data) {
 }
 
 function pickColor() {
+    if (colorsAvailable.length === 0) {
+        colorsAvailable = colors;
+    }
     let color = colorsAvailable[Math.floor(Math.random() * colorsAvailable.length)];
     colorsAvailable.splice(colorsAvailable.indexOf(color), 1);
     return color;
@@ -121,7 +126,7 @@ function addCourseToTable(data, schedules) {
         if (schedule["classroom"] === null) {
             schedule["classroom"] = "";
         }
-        let courseDiv = $("<div>" +
+        let courseDiv = $('<div>' +
             data["name"] + "<br>" +
             schedule["classroom"] + "<br>" +
             schedule["weekShort"] + "周" +
@@ -131,14 +136,21 @@ function addCourseToTable(data, schedules) {
         courseDiv.addClass("course" + duration);
         courseDiv.css("background", color);
         $("#class" + schedule["dayOfWeek"] + "-" + time[0]).append(courseDiv);
+
+        $(courseDiv).popover({
+            container: "body",
+            trigger: "hover",
+            placement: "left",
+            content: "123"
+        });
     }
 
 }
 
 function removeCourse(jx0404id) {
     window.TDSeletions.splice(window.TDSeletions.indexOf(jx0404id), 1);
-    $("#tbl-selected tr#tr" + jx0404id).remove();
-    $("#tbl-main div.course" + jx0404id).remove();
+    $("#tr" + jx0404id).remove();
+    $("#tbl-main").find("div.course" + jx0404id).remove();
 }
 
 function addToList(data) {
@@ -163,7 +175,7 @@ function addToList(data) {
     deleteButton.click(function () {
         removeCourse(data["jx0404id"]);
     });
-    $('#tbl-selected tr:last').after(insertedRow);
+    $('#tbl-selected').find('tr:last').after(insertedRow);
 
 }
 
@@ -192,6 +204,6 @@ function loadSavedResults() {
 }
 
 
-function isCourseOverlap() {
+function isCourseOverlap(schedules) {
 
 }
