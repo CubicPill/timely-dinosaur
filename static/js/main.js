@@ -29,7 +29,12 @@ function initPage() {
 
     $("#query-btn").click(onClickSearchBtn);
     loadSavedResults();
-
+    // $("#toggle-week").bootstrapToggle({
+    //     on: "单周",
+    //     off: "双周",
+    //     onstyle: "primary",
+    //     offstyle: "primary"
+    // });
 }
 
 function onClickSearchBtn() {
@@ -141,7 +146,8 @@ function addCourseToTable(data, schedules) {
             container: "body",
             trigger: "hover",
             placement: "left",
-            content: "123"
+            html: true,
+            content: "授课教师: " + data["instructor"]
         });
     }
 
