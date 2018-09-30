@@ -29,6 +29,7 @@ function initPage() {
 
     $("#query-btn").click(onClickSearchBtn);
     loadSavedResults();
+    $("#save-btn").click(saveResult());
     // $("#toggle-week").bootstrapToggle({
     //     on: "单周",
     //     off: "双周",

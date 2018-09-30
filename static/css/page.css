@@ -52,7 +52,8 @@
 #tbl-container {
     margin-left: 20%; /* Same as the width of the sidebar */
     width: 80%;
-    padding: 0 10px;
+    padding-top: 20px;
+
 }
 
 #query-type {
