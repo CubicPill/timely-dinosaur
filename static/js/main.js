@@ -29,7 +29,7 @@ function initPage() {
 
     $("#query-btn").click(onClickSearchBtn);
     loadSavedResults();
-    $("#save-btn").click(saveResult());
+    $("#save-btn").click(saveResult);
     // $("#toggle-week").bootstrapToggle({
     //     on: "单周",
     //     off: "双周",
@@ -58,13 +58,18 @@ function onClickSearchBtn() {
 }
 
 function saveResult() {
-    console.log('Save result');
+    if (window.TDSeletions.length === 0) {
+        alert('Empty!');
+        return;
+    }
     $.ajax({
         type: "POST",
         url: "/save",
         data: JSON.stringify({
             id: window.TDSeletions
-        })
+        }),
+        contentType: "application/json"
+
     });
 }
 
@@ -203,7 +208,10 @@ function loadSavedResults() {
         type: "GET",
         url: "/save",
         success: function (data) {
-
+            for (let i = 0; i < data["data"].length; ++i) {
+                addToList(data["data"][i]["basic"]);
+                addCourseToTable(data["data"][i]["basic"], data["data"][i]["schedule"]);
+            }
         },
 
         contentType: "application/json"
