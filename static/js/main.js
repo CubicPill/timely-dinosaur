@@ -30,12 +30,12 @@ function initPage() {
     $("#query-btn").click(onClickSearchBtn);
     loadSavedResults();
     $("#save-btn").click(saveResult);
-    // $("#toggle-week").bootstrapToggle({
-    //     on: "单周",
-    //     off: "双周",
-    //     onstyle: "primary",
-    //     offstyle: "primary"
-    // });
+    $("#toggle-week").bootstrapToggle({
+        on: "双周",
+        off: "单周",
+        onstyle: "primary",
+        offstyle: "info"
+    });
 }
 
 function onClickSearchBtn() {
