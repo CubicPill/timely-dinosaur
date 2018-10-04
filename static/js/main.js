@@ -22,7 +22,8 @@ let colorsAvailable = colors;
 $(document).ready(function () {
     initPage();
     window.TDSeletions = [];
-    window.timeTable = [];
+    window.timeTable = [];//18w*7d*11class
+
 });
 
 function initPage() {
@@ -109,9 +110,7 @@ function generateCourseCard(data) {
             url: "/schedule/" + data["jx0404id"],
             type: "GET",
             success: function (schedule) {
-                addCourseToTable(data, schedule["data"]);
-                addToList(data);
-                window.TDSeletions.push(data["jx0404id"]);
+                addCourse(data, schedule["data"]);
             }
         });
 
@@ -191,6 +190,26 @@ function addToList(data) {
 
 }
 
+function addCourse(data, schedules) {
+    if (isCourseOverlap(schedules)) {
+        return false;
+    }
+    for (let i = 0; i < schedules.length; ++i) {
+        let weeks = schedules[i]["weeks"].split(",").map(parseInt);
+        let time = schedules[i]["time"].split("-").map(parseInt);
+        let dayOfWeek = schedules[i]["dayOfWeek"];
+        for (let j = 0; j < weeks.length; ++j) {
+            for (let k = time[0] - 1; k < time[1]; ++k) {
+                window.timeTable[weeks[i] - 1][dayOfWeek - 1][k] = 1;
+            }
+        }
+    }
+    window.TDSeletions.push(data["jx0404id"]);
+    addToList(data);
+    addCourseToTable(data, schedules);
+    return true;
+}
+
 function onSearchSuccess(data) {
     let resultList = $("#result-list");
     resultList.empty();
@@ -209,8 +228,7 @@ function loadSavedResults() {
         url: "/save",
         success: function (data) {
             for (let i = 0; i < data["data"].length; ++i) {
-                addToList(data["data"][i]["basic"]);
-                addCourseToTable(data["data"][i]["basic"], data["data"][i]["schedule"]);
+                addCourse(data["data"][i]["basic"], data["data"][i]["schedule"]);
             }
         },
 
@@ -220,5 +238,17 @@ function loadSavedResults() {
 
 
 function isCourseOverlap(schedules) {
-
+    for (let i = 0; i < schedules.length; ++i) {
+        let weeks = schedules[i]["weeks"].split(",").map(parseInt);
+        let time = schedules[i]["time"].split("-").map(parseInt);
+        let dayOfWeek = schedules[i]["dayOfWeek"];
+        for (let j = 0; j < weeks.length; ++j) {
+            for (let k = time[0] - 1; k < time[1]; ++k) {
+                if (window.timeTable[weeks[i] - 1][dayOfWeek - 1][k] !== 0) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
