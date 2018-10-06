@@ -13,17 +13,20 @@ CREATE TABLE IF NOT EXISTS course (
   `type`         VARCHAR(45) NULL, -- 课程类型（选修必修等）
   `credit`       INT         NOT NULL,
   `department`   VARCHAR(45) NULL,
-  PRIMARY KEY (`jx0404id`)
+  `time`         VARCHAR(45) NULL,
+  `classroom`    VARCHAR(45) NULL,
+  PRIMARY KEY (`jx0404id`),
+  CONSTRAINT chk_type CHECK (type IN ('REQUIRED', 'ELECTIVE', 'PLANNED', 'CROSS_GRADE', 'CROSS_DEPT', 'COMMON'))
 );
 
 
 CREATE TABLE IF NOT EXISTS courseSchedule (
   `jx0404id`  INT         NOT NULL,
   `weeks`     VARCHAR(45) NOT NULL, -- skzcList
-  `classroom` VARCHAR(45) NOT NULL,
+  `classroom` VARCHAR(45) NULL,
   `time`      VARCHAR(45) NOT NULL,
   `dayOfWeek` INT         NOT NULL,
-  `weeks2`    VARCHAR(45) NULL, -- kkzc 字段
+  `weekShort` VARCHAR(45) NULL, -- kkzc 字段
   CONSTRAINT `id_fk`
   FOREIGN KEY (`jx0404id`)
   REFERENCES course (`jx0404id`)

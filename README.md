@@ -4,12 +4,19 @@
 使用 Python3 编写, 基于 requests 和 bs4 包, 网络条件良好时批量选课可在五秒钟内全部完成 (保守估计, 一般选课请求过程会在 200ms 内完成)
 
 ## 使用帮助
-**Windows:** 到 [Latest Release](https://github.com/CubicPill/timely-dinosaur/releases/latest) 下载 pyinstaller 打包好的 .exe 文件, 创建配置文件后即可运行.        
-**Mac OS:** 自行 Google "Mac OS 运行python脚本", 懒人请点[Mac OS 运行python脚本](http://lmgtfy.com/?q=Mac+OS+%E8%BF%90%E8%A1%8Cpython%E8%84%9A%E6%9C%AC)        
-**Linux:** 你应该知道怎么运行, 不然还是回去用 Windows 吧      
+暂时不提供打包好的可执行文件, release 中为旧版, 谨慎使用
+
+运行选课主程序:      
+```
+python3 run.py
+```
+运行排课辅助:    
+```
+python3 run.py -w
+```
 
 初次使用时请将 ```config_sample.json``` 改名为 ```config.json```, 并修改配置参数    
-目前支持批量选课(需事先将课程 id 写入配置文件) 和交互式单项选课.     
+参考 ```courst_list_sample.txt``` 创建自己的 ```course_list.txt```    
 Tips: 可在开放选课预览时提前运行程序获取全部课程信息, 以缩短选课时间
 
 
@@ -27,3 +34,7 @@ Tips: 可在开放选课预览时提前运行程序获取全部课程信息, 以
 打开教务系统选课页面, 鼠标移至课程 "选课" 超链接上, 右键弹出菜单中点击 "复制链接地址", 得到如下内容:    
 ```javascript:xsxkFun('201620173000048');```    
 其中 ```201620173000048``` 即为课程 id, 填入 ```config.json``` 中即可批量选课
+
+## Coming Soon
+排课辅助前端页面
+
