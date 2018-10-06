@@ -2,10 +2,11 @@ import json
 import logging
 import os
 import pickle
+from enum import IntEnum
+
 import requests
 from bs4 import BeautifulSoup
 from requests.structures import CaseInsensitiveDict
-from enum import IntEnum
 
 MAIN_URL = 'http://jwxt.sustc.edu.cn/jsxsd/framework/xsMain.jsp'
 LOGIN_SERVER_ADDR = 'https://cas.sustc.edu.cn'
@@ -123,7 +124,7 @@ def load_config_from_file():
     with open('config.json') as f:
         config = json.load(f)
     course_id_list = list()
-    with open('course_list.txt',encoding='utf-8') as f:
+    with open('course_list.txt', encoding='utf-8') as f:
         for line in f.readlines():
             if line and line != '\n':
                 course_id_list.append(line.split('#', 1)[0])

@@ -27,12 +27,13 @@ $(document).ready(function () {
 });
 
 function initPage() {
+    let $weekSelect = $("#weekSelect");
     for (let i = 1; i <= 21; ++i) {
-        $("#weekSelect").append("<option value='" + i + "'>" + i + "</option>");
+        $weekSelect.append("<option value='" + i + "'>" + i + "</option>");
     }
     $("#query-btn").click(onClickSearchBtn);
     $("#save-btn").click(saveResult);
-    $("#weekSelect").change(updateTable);
+    $weekSelect.change(updateTable);
     loadSavedResults();
 }
 
@@ -158,7 +159,7 @@ function generateCourseTableCard(data, schedules) {
         courseDiv.addClass("course" + duration);
         courseDiv.css("background", color);
 
-        $(courseDiv).popover({
+        courseDiv.popover({
             container: "body",
             trigger: "hover",
             placement: "left",

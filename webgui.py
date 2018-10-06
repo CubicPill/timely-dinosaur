@@ -1,11 +1,11 @@
-from flask import Flask, jsonify, request
 import json
-import os
 import logging
-import sys
+
+from flask import Flask, jsonify, request
+
+from db import Database
 from transform import parse_course_data
 from utils import get_course_type_enum_from_int
-from db import Database
 
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(asctime)s %(name)s %(threadName)s %(message)s',
                     filename='td_web.log')
@@ -56,10 +56,10 @@ def save_result():
     save_list = list()
     if not json_data.get('id'):
         return jsonify({'ok': False, 'error': 'bad request'})
-    for id in json_data['id']:
-        detail = database.get_course_basic_data(id)
+    for jx0404id in json_data['id']:
+        detail = database.get_course_basic_data(jx0404id)
         save_list.append(
-            '{}#{}|{}|{}|{}'.format(id, detail['courseNo'], detail['name'], detail['subName'], detail['time']))
+            '{}#{}|{}|{}|{}'.format(jx0404id, detail['courseNo'], detail['name'], detail['subName'], detail['time']))
     with open('course_list.txt', 'w', encoding='utf-8') as f:
         f.write('\n'.join(save_list))
     return jsonify({'ok': True})
