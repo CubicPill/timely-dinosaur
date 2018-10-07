@@ -60,21 +60,24 @@ def get_session():
 
 def do_login(username, password) -> dict:
     _global_session.headers = CaseInsensitiveDict({
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                      'AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/60.0.3112.113 Safari/537.36',
         'Accept-Encoding': ', '.join(('gzip', 'deflate')),
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
         'Connection': 'keep-alive',
     })
     req = _global_session.get(MAIN_URL)
+    if req.status_code != 200:
+        return {'ok': False, 'error': 'Server returned status code %d' % req.status_code}
+
     soup = BeautifulSoup(req.content, 'html5lib')
     post_url = 'https://cas.sustc.edu.cn/cas/login?service=http%3A%2F%2Fjwxt.sustc.edu.cn%2Fjsxsd%2F'
     login_data = {}
     for element in soup.find('form', {'id': 'fm1'}).find_all('input'):
         if element.has_attr('name'):
-            value = ''
             if element.has_attr('value'):
-                value = element['value']
-            login_data[element['name']] = value
+                login_data[element['name']] = element['value']
     login_data['username'] = username
     login_data['password'] = password
     response = _global_session.post(post_url, data=login_data, timeout=20)
@@ -95,7 +98,7 @@ def load_session_pickle() -> str:
     with open('session.pickle', 'rb') as f:
         try:
             _session = pickle.load(f)
-        except Exception as e:
+        except Exception:
             return 'CORRUPTED'
 
         else:

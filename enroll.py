@@ -184,7 +184,6 @@ def get_args():
         sys.exit(1)
     config = load_config_from_file()
     logging.debug('Config loaded!')
-    mode = config.get('mode') if 'mode' in config else 'batch'
     reload_course = config.get('reload') if 'reload' in config else True
     usn = config.get('username')
     pwd = config.get('password')
@@ -207,12 +206,11 @@ def get_args():
         'usn': usn,
         'pwd': pwd,
         'id_list': id_list,
-        'wait': wait,
-        'mode': mode
+        'wait': wait
     }
 
 
-def main(mode, reload_course, usn, pwd, id_list, wait):
+def main(reload_course, usn, pwd, id_list, wait):
     colorama.init(autoreset=True)
     need_login = True
 
@@ -237,7 +235,7 @@ def main(mode, reload_course, usn, pwd, id_list, wait):
         result = do_login(usn, pwd)
         if not result['ok']:
             print(colorama.Fore.LIGHTRED_EX + '登录失败! 错误信息: ' + result['error'] + '\n')
-            logging.critical('CAS login failed')
+            logging.critical('CAS login failed: ' + result['error'])
             sys.exit(1)
         print(colorama.Fore.LIGHTGREEN_EX + '登录成功!\n')
         logging.info('Login completed. Time: {}ms'.format(round(time.time() * 1e3 - start_time), 2))
@@ -295,8 +293,8 @@ def main(mode, reload_course, usn, pwd, id_list, wait):
             logging.error('ID {} not found in data, skip'.format(course_id))
             print_queue.put(colorama.Fore.LIGHTRED_EX + '错误: 课程ID号{}无数据, 将从队列中删除. 使用交互式选课以忽略此错误'.format(course_id))
             delete_ids.append(course_id)
-    for id in delete_ids:
-        id_list.remove(id)
+    for cid in delete_ids:
+        id_list.remove(cid)
     print_queue.put('\n选课课程:')
     for course_id in id_list:
         print_queue.put(colorama.Fore.LIGHTCYAN_EX +
@@ -312,7 +310,8 @@ def main(mode, reload_course, usn, pwd, id_list, wait):
             print_queue.put(colorama.Fore.LIGHTRED_EX +
                             '警告: 课程 id 为 {} 的课程无数据. 尝试更新课程列表或检查课程 id 输入'.format(item))
 
-    while not print_queue.empty(): pass
+    while not print_queue.empty():
+        pass
     input('按 Enter 键继续\n')
     print_queue.put('开始批量自动选课......\n')
     start_time = time.time() * 1e3
@@ -325,7 +324,8 @@ def main(mode, reload_course, usn, pwd, id_list, wait):
 
     logging.info('Done, %d success, %d failed' % (len(success), len(failed)))
     while len(failed) != 0:
-        while not print_queue.empty(): pass
+        while not print_queue.empty():
+            pass
         retry = input('是否尝试重选失败课程? (Y/n) ')
         if retry.lower() == 'n':
             break
@@ -335,7 +335,8 @@ def main(mode, reload_course, usn, pwd, id_list, wait):
         success, failed = do_batch_enroll(failed_ids)
         logging.info('Batch enrolling done. Time {}ms'.format(round(time.time() * 1e3 - start_time), 2))
         print_result_list(success, failed)
-    while not print_queue.empty(): pass
+    while not print_queue.empty():
+        pass
     logout = input('是否退出登陆? (y/N) ')
     if logout.lower() == 'y':
         logout_session()

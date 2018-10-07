@@ -166,6 +166,7 @@ function generateCourseTableCard(data, schedules) {
             html: true,
             content: "授课教师: " + data["instructor"]
         });
+        //TODO: fix popover
         cards.push(courseDiv);
     }
     return cards;

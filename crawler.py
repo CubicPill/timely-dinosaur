@@ -1,6 +1,7 @@
 import json
 import logging
 import sys
+
 from utils import CourseType
 from utils import get_session
 
@@ -109,8 +110,8 @@ def fetch_course_data():
         common = {'aaData': []}
         print('错误: 公选课选课课程信息获取失败!')
 
-    data = required.get('aaData') + elective.get('aaData') + sem_plan.get('aaData') + cross_grade.get('aaData') \
-           + cross_dept.get('aaData') + common.get('aaData')
+    data = required.get('aaData') + elective.get('aaData') + sem_plan.get('aaData') + cross_grade.get(
+        'aaData') + cross_dept.get('aaData') + common.get('aaData')
     logging.debug('All course data fetching done. {} records in total.'.format(len(data)))
 
     return data

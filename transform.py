@@ -1,6 +1,3 @@
-import json
-
-
 def strip(text):
     if text is None:
         return None
@@ -11,7 +8,7 @@ def strip(text):
     return ret
 
 
-def parse_course_data(course_json, type: str):
+def parse_course_data(course_json, course_type: str):
     """
     (jx0404id, capacity, name, subName, courseNo, instructor, prerequisite, credit, department, type)
     [(jx0404id, weeks, classroom, time, dayOfWeek, weeks2)]
@@ -41,4 +38,4 @@ def parse_course_data(course_json, type: str):
         ])
 
     return ((course_id, capacity, course_name, course_sub_name, course_no, instructor, prerequisite, credit,
-             department, course_time, classroom), type), schedules
+             department, course_time, classroom), course_type), schedules
