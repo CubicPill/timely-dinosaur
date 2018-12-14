@@ -177,6 +177,22 @@ function generateCourseTableCard(data, schedules) {
 function removeCourse(jx0404id) {
     window.TDSeletions.splice(window.TDSeletions.indexOf(jx0404id), 1);
     $("#tr" + jx0404id).remove();
+    let data = cachedData[jx0404id];
+    let schedules = data.schedule;
+    for (let i = 0; i < schedules.length; ++i) {
+        let weeks = schedules[i]["weeks"].split(",").map(function (v) {
+            return parseInt(v);
+        });
+        let time = schedules[i]["time"].split("-").map(function (v) {
+            return parseInt(v);
+        });
+        let dayOfWeek = schedules[i]["dayOfWeek"];
+        for (let j = 0; j < weeks.length; ++j) {
+            for (let k = time[0] - 1; k < time[1]; ++k) {
+                window.timeTable[weeks[i] - 1][dayOfWeek - 1][k] = 0;
+            }
+        }
+    }
     $("#tbl-main").find("div.course" + jx0404id).remove();
 }
 
