@@ -117,6 +117,7 @@ function generateCourseCard(data) {
         "</li>");
     element.click(function () {
         if (window.TDSeletions.indexOf(data["jx0404id"]) >= 0) {
+            alert("此门课程已加入！");
             return;
         }
         $.ajax({
